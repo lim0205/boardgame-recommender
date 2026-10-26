@@ -74,7 +74,7 @@ hybrid_score = alpha * content_score + (1.0 - alpha) * cf_score
 | 모델 | 바꿔볼 설정 | 기본 평가 |
 |---|---|---|
 | Memory-based CF | User/Item-based, Cosine/Pearson, k | RMSE, MAE, Hit Rate@10, Catalog Coverage@10 |
-| SVD | n_factors, reg_all, lr_all, n_epochs | 동일 |
+| SVD (완료) | n_factors, residual_scale, item_reg | 동일 |
 | Content-based | mechanics / themes / both | 동일 |
 | Hybrid | CF 선택 + alpha | 동일 |
 
@@ -86,12 +86,12 @@ hybrid_score = alpha * content_score + (1.0 - alpha) * cf_score
 
 **Private 저장소:** 팀원은 먼저 저장소 소유자에게 Collaborator로 초대받아야 push할 수 있습니다. GitHub의 Repository Settings → Collaborators에서 Write 권한으로 초대하세요.
 
-아래 파일에 팀원 코드를 추가하길 권장합니다.
+아래 파일에 팀원 코드를 추가하길 권장합니다. SVD는 이미 구현되어 있으므로 수정 없이 재사용하면 됩니다.
 
 ```text
-boardrec/memory_cf.py
-boardrec/svd.py
-boardrec/hybrid.py
+boardrec/memory_cf.py  # 팀원이 추가
+boardrec/hybrid.py     # 팀원이 추가
+boardrec/svd.py        # 구현 완료, 재사용
 ```
 
 공통 `preprocessing.py`와 `evaluation.py`는 수정 전에 변경 이유를 공유하세요. 기능 추가 시 `tests/`에 대응 테스트도 같이 작성하세요. 데이터 원본, 대규모 가공 데이터, GitHub 토큰 등은 절대로 커밋하지 마세요.
