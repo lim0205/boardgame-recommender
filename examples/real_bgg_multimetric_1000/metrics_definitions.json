@@ -1,0 +1,19 @@
+{
+  "data": "User-provided BGG dataset, preprocessed sample",
+  "split": "Validation only. Test not used for metric/weight selection.",
+  "selection": "No single weight automatically selected; compare competing objectives.",
+  "labels": "Positive when observed held-out rating >= 8; unobserved means unknown, NOT negative.",
+  "ndcg_gain": "max(0, min(3, rating - 7)) for observed held-out ratings; log2 rank discount.",
+  "observed_recall": "Per-user fraction of held-out positive ratings present in top-k.",
+  "coverage": "Unique games in all top-k lists / 1000-game evaluated catalog.",
+  "diversity": "Average pairwise 1 - cosine(mechanics+themes) within each top-k list.",
+  "personalization": "1 - mean overlap / k of two users' top-k recommendation sets.",
+  "novelty": "Average -log2 Laplace-smoothed TRAIN item popularity probability (bits).",
+  "long_tail": "Within the already popularity-filtered 1000-game catalog, bottom 80% by TRAIN rating count. Tail Hit/Recall evaluated on users with heldout positive tail items; count disclosed.",
+  "caveats": [
+    "Offline missing ratings are unlabeled, not negative.",
+    "The candidate catalog already contains 1000 globally popular games.",
+    "The TEST split was used in a previous experiment. Future comparisons require a fresh untouched holdout.",
+    "Only aggregated output saved; no raw usernames or rating records are published."
+  ]
+}
