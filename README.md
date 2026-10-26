@@ -6,6 +6,18 @@ Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Ev
 > **상태:** 인공 데이터 및 사용자가 제공한 BGG ZIP으로 **실제 실험 완료(4,997명 / 362,787평점)**. 자세한 숫자와 제약: [실제 데이터 실험 보고서](docs/ACTUAL_BGG_RUN.md).
 > **데이터 사용 주의:** BGG XML API 약관에는 사이트/API 데이터의 AI 학습 목적 사용을 제한하는 조항이 있습니다. Kaggle 게시 여부와 무관하게 실제 데이터 이용 허가 범위를 먼저 확인하세요. 이 저장소에는 BGG 데이터가 없습니다.
 
+## 최신 실제 데이터 추천 순위 개선 (2026-10-26)
+
+[Popularity Baseline + Content/Popularity Ranking 실제 BGG 실험](docs/RANKING_IMPROVEMENT.md).
+Validation Hit Rate@10(1,000명): 인기순 33.9%, 콘텐츠 10%+인기도 90% 32.2%, 순수 콘텐츠 6.1%.
+같은 Test 1,000명: 인기순 30.6%, 콘텐츠 10% 혼합 29.9%, 순수 콘텐츠 4.7%.
+
+**성능 최고인 인기순(α=0)은 개인화 추천이 아닙니다.** α=0.1은 추천 다양성을 높이는 절충안입니다. 새로운 순위 점수는 평점 1~10이 아니므로 RMSE 계산에 사용하지 않습니다. Test 분할은 이전 실험에서 이미 살펴본 적이 있어 결과는 탐색적 비교로 표기합니다.
+
+```bash
+python scripts/run_ranking.py --prepared-dir data/processed --out outputs/bgg_ranking --max-users 1000 --rights-confirmed
+```
+
 ## 담당 범위
 
 | 파트 | 코드 | 담당 |
@@ -15,6 +27,7 @@ Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Ev
 | RMSE / MAE / Hit Rate@10 | `boardrec/evaluation.py` | A (본인) |
 | 특징 조합 비교, validation tuning, test, 그래프 | `boardrec/experiments.py` | A (본인) |
 | 공통 API 연결 어댑터 | `boardrec/adapters.py` | A (본인) |
+| Popularity Baseline + Content/Popularity Ranking + Validation tuning | `boardrec/ranking.py`, `boardrec/ranking_experiments.py` | A (본인) |
 | Memory-based CF + SVD + Hybrid | `boardrec/memory_cf.py`, `boardrec/svd.py`, `boardrec/hybrid.py` (추가 예정) | B (팀원) |
 
 ## 요구 사항
@@ -32,9 +45,6 @@ python -m boardrec.cli demo --top-games 35 --min-user-ratings 8 --max-users 25
 무작위로 **생성한 인공 데이터**를 사용하여 전처리→모델 평가까지 실행합니다. 생성된 `outputs/demo/results.json`, `metrics.csv`, `validation_rmse.png`, `example_top10.csv`는 예제 실험 결과이며 실제 추천 성능이 아닙니다.
 
 ## 실제 CSV 실행 방법 (사용 허가가 확인된 경우만)
-
-**실제 BGG ZIP에서 확인한 실행 방법:** `python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirmed --max-users 5000 --max-hit-users 250` (원본을 직접 다운로드하거나 권한을 확인한 후 실행). 더 적은 메모리를 사용할 경우 `--low-memory`를 추가하세요. 실제 실행 보고서는 [여기](docs/ACTUAL_BGG_RUN.md)를 참고하세요.
-
 
 원본 ZIP을 직접 준비한 경우 권장 실행 방법 (`max-users=5000`, 약 4GB 이상의 메모리 권장):
 
@@ -71,7 +81,7 @@ python -m boardrec.cli run --data-dir data/processed --out outputs --max-hit-use
 
 ## 준비된 입력/출력 규격
 
-`data/processed` 폴더의 세 평점 파일은 전부 동일한 컬럼을 사용합니다. 개인정보가 포함될 수 있으니 Git에 추가하지 마세요.
+`data/processed` 폴더의 세 평점 파일은 전부 동일한 컬럼을 사용합니다.
 
 | 파일 | 열 | 용도 |
 |---|---|---|
@@ -157,14 +167,6 @@ tests/                     # 자동 단위/통합 테스트
 - 예시로 기획한 Kaggle 출처: https://www.kaggle.com/datasets/threnjen/board-games-database-from-boardgamegeek (실제 데이터/학습 권한 사전 확인 필수)
 
 추가 자료: [`docs/GITHUB_PUBLISH.md`](docs/GITHUB_PUBLISH.md)에는 팀원 공유/게시 방법을 적어뒀습니다. [`examples/synthetic_results/`](examples/synthetic_results/)에는 실제 데이터가 아닌 **가상 데이터 실행 결과**를 첨부했습니다.
-
-## 익명화한 실제 BGG 결과
-
-- 실제 파일: `archive (1).zip` (사용자가 제공한 원본; GitHub에는 원본을 포함하지 않음)
-- **4,997 users / 1,000 games / 362,787 ratings** — 고정 시드 42의 사용자 표본
-- Validation winner: Mechanics + Themes (RMSE **1.2384**)
-- Final Test: RMSE **1.2457**, MAE **0.9399**, sampled Hit Rate@10 **3.2%** (8 of 250)
-- 자세한 설정/해석: [실제 BGG 실험 기록](docs/ACTUAL_BGG_RUN.md), [집계 지표/그래프](examples/real_bgg_5000/)
 
 ## 제한사항
 
