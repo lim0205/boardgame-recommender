@@ -1,0 +1,26 @@
+{
+  "dataset": "User-provided BGG dataset, 4997 users / 1000 candidate games / 362787 ratings",
+  "model": "Pure ContentBasedRecommender (mechanics + themes, no popularity score)",
+  "split": "Validation (80/10/10 split of observed ratings; selection based on validation RMSE)",
+  "metric_scope": {
+    "rating_errors": "All 36,212 validation ratings",
+    "hit_and_coverage": "Same seeded 1000 users sampled from 4479 eligible validation users with at least one held-out rating >= 8"
+  },
+  "results": {
+    "rmse": 1.2383836282936018,
+    "mae": 0.939017494228978,
+    "hit_rate_at_10": 0.061,
+    "catalog_coverage_at_10": 0.504,
+    "evaluated_users": 1000,
+    "eligible_users": 4479,
+    "hit_count": 61,
+    "distinct_recommended_games": 504,
+    "candidate_catalog_size": 1000
+  },
+  "caveats": [
+    "Unrated games are unlabeled, not known negatives",
+    "The candidate catalog is preselected to 1000 popular games, but popularity is not used in recommendation scores",
+    "Prior Test was inspected in previous exploratory work; this is validation-only reporting.",
+    "Original BGG usernames and rating rows are not part of this output."
+  ]
+}
