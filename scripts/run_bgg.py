@@ -7,12 +7,14 @@ Usage:
 from __future__ import annotations
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from boardrec.bgg_io import find_csvs, extract_required_csvs, check_bgg_schema
 from boardrec.preprocessing import PrepConfig, prepare
+from boardrec.bgg_fast import prepare_bgg_fast
 from boardrec.experiments import run_experiments
 
 
@@ -23,22 +25,25 @@ def main(argv=None):
     inp.add_argument("--csv-dir", type=Path, help="Extracted CSV folder")
     parser.add_argument("--rights-confirmed", action="store_true",
                         help="Confirm permission for model training with this data")
+    parser.add_argument("--low-memory", action="store_true", help="Use slower chunked three-pass preparation")
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--processed-dir", type=Path, default=Path("data/processed"))
     parser.add_argument("--out", type=Path, default=Path("outputs/bgg"))
     parser.add_argument("--top-games", type=int, default=1000)
     parser.add_argument("--min-user-ratings", type=int, default=20)
-    parser.add_argument("--max-users", type=int, default=20000)
+    parser.add_argument("--max-users", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max-hit-users", type=int, default=500)
+    parser.add_argument("--max-hit-users", type=int, default=250)
     args = parser.parse_args(argv)
     if not args.rights_confirmed:
         parser.error("Verify BGG data usage permission before training. --rights-confirmed is required.")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     paths = extract_required_csvs(args.archive, args.raw_dir) if args.archive else find_csvs(args.csv_dir)
     headers = check_bgg_schema(paths)
     cfg = PrepConfig(top_games=args.top_games, min_user_ratings=args.min_user_ratings,
                      max_users=args.max_users, seed=args.seed)
-    manifest = prepare(paths["user_ratings.csv"], paths["games.csv"],
+    preparer = prepare if args.low_memory else prepare_bgg_fast
+    manifest = preparer(paths["user_ratings.csv"], paths["games.csv"],
                        paths["mechanics.csv"], paths["themes.csv"],
                        args.processed_dir, cfg)
     report = run_experiments(args.processed_dir, args.out, max_hit_users=args.max_hit_users)
