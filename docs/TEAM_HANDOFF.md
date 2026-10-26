@@ -73,14 +73,18 @@ hybrid_score = alpha * content_score + (1.0 - alpha) * cf_score
 
 | 모델 | 바꿔볼 설정 | 기본 평가 |
 |---|---|---|
-| Memory-based CF | User/Item-based, Cosine/Pearson, k | RMSE, MAE, Hit Rate@10 |
+| Memory-based CF | User/Item-based, Cosine/Pearson, k | RMSE, MAE, Hit Rate@10, Catalog Coverage@10 |
 | SVD | n_factors, reg_all, lr_all, n_epochs | 동일 |
 | Content-based | mechanics / themes / both | 동일 |
 | Hybrid | CF 선택 + alpha | 동일 |
 
+**Popularity는 최종 추천 점수에 추가하지 않습니다.** 네 가지 평가 지표를 모든 모델에 동일하게 적용합니다.
+
 모델이 많은 경우 연산 시간이 오래 걸리므로 baseline과 작은 데이터로 기능 검증을 한 뒤 실험 규모를 늘리세요. 비교 시 데이터 필터, user split, seed, 평가 사용자 표본을 고정하세요.
 
 ## 6. PR 또는 파일로 합치기
+
+**Private 저장소:** 팀원은 먼저 저장소 소유자에게 Collaborator로 초대받아야 push할 수 있습니다. GitHub의 Repository Settings → Collaborators에서 Write 권한으로 초대하세요.
 
 아래 파일에 팀원 코드를 추가하길 권장합니다.
 

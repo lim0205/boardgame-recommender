@@ -1,192 +1,91 @@
-# Board Game Recommender — ML Term Project
+# Board Game Recommender — Machine Learning Term Project
 
-## 현재 공식 실험 기준 (2026-10-27)
+실제 BoardGameGeek(BGG) 평점과 게임 메타데이터를 이용하는 보드게임 추천 시스템 프로젝트입니다. **현재 구현된 추천기는 순수 Content-based Filtering이며, 추천 점수에 Popularity를 혼합하지 않습니다.**
 
-- **추천 알고리즘: 순수 Content-based Filtering.** 게임의 Mechanics/Themes + 사용자의 Train 평점만 사용하며 추천 점수에 게임 인기도를 섞지 않습니다. 기본 `boardrec.cli run` / `scripts/run_bgg.py` 실행은 인기도 결합을 호출하지 않습니다.
-- **필수 평가 3개:** RMSE, MAE, Hit Rate@10. **추가 지표 1개:** Catalog Coverage@10. 그 외 NDCG/Recall/Personalization/Long-tail 분석은 이전 탐색용 자료로만 보존하며 공식 비교표에서는 제외합니다.
-- 모델 간 공정한 비교를 위해 동일한 Train/Validation 분할, 동일한 후보 게임 목록, 동일한 Hit Rate/Coverage 사용자 표본과 Top-10 설정을 사용하세요.
-- **주의:** 사전 전처리에서 평점 수 상위 1,000개 게임을 선택하는 기준은 그대로 유지합니다. 이는 데이터 축소용 인기 게임 필터이며, 추천 점수에 인기도를 결합하는 것과는 구분해야 합니다.
-- 기준 및 보고 방법: [EVALUATION_POLICY.md](docs/EVALUATION_POLICY.md).
+## 프로젝트 현황
 
+- **구현 완료 (담당 A):** BGG CSV 전처리, Mechanics/Themes 기반 Content-based Filtering, 공통 평가, 실험 실행, 테스트
+- **팀원 구현 예정 (담당 B):** Memory-based Collaborative Filtering, SVD (Model-based CF), 최종 Hybrid (Content + CF)
+- **실제 데이터 실험:** 게임 1,000개 · 사용자 4,997명 · 평점 362,787건. 최종 비교 표본이 아닌, 우선 완료된 5,000명 규모 실험입니다.
+- **원본 데이터는 저장소에 없음.** 원본 평점/Username/개인별 학습 데이터는 커밋하지 않습니다.
 
-**이전 탐색 실험 (공식 평가에서 제외):** [NDCG, Recall, Coverage, Personalization, Tail Hit 실험](docs/MULTI_METRIC_EVALUATION.md).
-
-
-Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Evaluation**.
-두 명이 독립적으로 작업한 모델을 같은 데이터/평가 규칙으로 연결하도록 설계했습니다.
-
-> **상태:** 인공 데이터 및 사용자가 제공한 BGG ZIP으로 **실제 실험 완료(4,997명 / 362,787평점)**. 자세한 숫자와 제약: [실제 데이터 실험 보고서](docs/ACTUAL_BGG_RUN.md).
-> **데이터 사용 주의:** BGG XML API 약관에는 사이트/API 데이터의 AI 학습 목적 사용을 제한하는 조항이 있습니다. Kaggle 게시 여부와 무관하게 실제 데이터 이용 허가 범위를 먼저 확인하세요. 이 저장소에는 BGG 데이터가 없습니다.
-
-## 이전 인기도 혼합 실험 — 기록용, 현재 기본 모델에서 제외 (2026-10-26)
-
-[Popularity Baseline + Content/Popularity Ranking 실제 BGG 실험](docs/RANKING_IMPROVEMENT.md).
-Validation Hit Rate@10(1,000명): 인기순 33.9%, 콘텐츠 10%+인기도 90% 32.2%, 순수 콘텐츠 6.1%.
-같은 Test 1,000명: 인기순 30.6%, 콘텐츠 10% 혼합 29.9%, 순수 콘텐츠 4.7%.
-
-**성능 최고인 인기순(α=0)은 개인화 추천이 아닙니다.** α=0.1은 추천 다양성을 높이는 절충안입니다. 새로운 순위 점수는 평점 1~10이 아니므로 RMSE 계산에 사용하지 않습니다. Test 분할은 이전 실험에서 이미 살펴본 적이 있어 결과는 탐색적 비교로 표기합니다.
-
-```bash
-python scripts/run_ranking.py --prepared-dir data/processed --out outputs/bgg_ranking --max-users 1000 --rights-confirmed
-```
-
-## 담당 범위
-
-| 파트 | 코드 | 담당 |
-|---|---|---|
-| CSV 로딩, 데이터 정제/필터링, 사용자별 80/10/10 분할 | `boardrec/preprocessing.py` | A (본인) |
-| Mechanics/Themes 기반 Content-based Filtering | `boardrec/content.py` | A (본인) |
-| RMSE / MAE / Hit Rate@10 | `boardrec/evaluation.py` | A (본인) |
-| 특징 조합 비교, validation tuning, test, 그래프 | `boardrec/experiments.py` | A (본인) |
-| 공통 API 연결 어댑터 | `boardrec/adapters.py` | A (본인) |
-| Popularity Baseline + Content/Popularity Ranking + Validation tuning | `boardrec/ranking.py`, `boardrec/ranking_experiments.py` | A (본인) |
-| Memory-based CF + SVD + Hybrid | `boardrec/memory_cf.py`, `boardrec/svd.py`, `boardrec/hybrid.py` (추가 예정) | B (팀원) |
-
-## 요구 사항
-
-- Python 3.10 이상
-- `pip install -e ".[dev]"`
-- `python -m pytest -q` 로 테스트
-
-## 먼저 작동 확인하기 — 외부 데이터 필요 없음
-
-```bash
-python -m boardrec.cli demo --top-games 35 --min-user-ratings 8 --max-users 25
-```
-
-무작위로 **생성한 인공 데이터**를 사용하여 전처리→모델 평가까지 실행합니다. 생성된 `outputs/demo/results.json`, `metrics.csv`, `validation_rmse.png`, `example_top10.csv`는 예제 실험 결과이며 실제 추천 성능이 아닙니다.
-
-## 실제 CSV 실행 방법 (사용 허가가 확인된 경우만)
-
-원본 ZIP을 직접 준비한 경우 권장 실행 방법 (`max-users=5000`, 약 4GB 이상의 메모리 권장):
-
-```bash
-python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirmed --max-users 5000
-```
-
-3-pass streaming 경로가 필요하다면 `--low-memory`를 추가하세요. 아래의 수동 2단계 명령도 유지되지만 대용량 CSV에서는 느립니다.
-
-
-원본 4개 CSV 파일을 `data/raw/`에 직접 배치합니다. 원본은 Git에 포함되지 않습니다.
-
-```text
-data/raw/
-  user_ratings.csv
-  games.csv
-  mechanics.csv
-  themes.csv
-```
-
-전처리:
-
-```bash
-python -m boardrec.cli prepare --ratings data/raw/user_ratings.csv --games data/raw/games.csv --mechanics data/raw/mechanics.csv --themes data/raw/themes.csv --top-games 1000 --min-user-ratings 20 --max-users 20000 --seed 42
-```
-
-모델 실험:
-
-```bash
-python -m boardrec.cli run --data-dir data/processed --out outputs --max-hit-users 500
-```
-
-수량은 예시이며 사전에 정한 기준대로 실험한 뒤 보고서에 최종 값과 선택 이유를 남기세요. 무작위 시드는 **42로 고정**되어 누구나 같은 분할을 복원할 수 있습니다.
-
-## 준비된 입력/출력 규격
-
-`data/processed` 폴더의 세 평점 파일은 전부 동일한 컬럼을 사용합니다.
-
-| 파일 | 열 | 용도 |
-|---|---|---|
-| `train.csv` | `user_id`, `game_id`, `rating` | 유사도와 모델 학습만 |
-| `val.csv` | 동일 | 하이퍼파라미터 / feature / α 선택 |
-| `test.csv` | 동일 | 선택된 설정의 최종 평가, 한 번만 |
-| `games.csv` | `game_id` + 원본 속성 | 표시용 게임 정보 |
-| `mechanics.csv` | `game_id` + binary features | 콘텐츠 특징 |
-| `themes.csv` | `game_id` + binary features | 콘텐츠 특징 |
-| `manifest.json` | 건수, 시드, 필터 기준 | 재현성 기록 |
-
-원본에 `Username`/`BGGId`/`Rating`처럼 이름이 달라도 위 세 열로 통일해 저장합니다. **ID는 전부 문자열(str)** 입니다. `0`은 미관측 평점이 아닌 0/1 특징에만 사용합니다. 전체 `users × games` 밀집 배열은 만들지 않습니다.
-
-## 내용 기반 추천 방식
-
-1. `mechanics.csv` / `themes.csv`의 0/1 컬럼을 조합하여 sparse feature matrix를 만듭니다.
-2. 각 게임 벡터를 L2 정규화해 **Cosine Similarity**를 계산합니다.
-3. 각 사용자에 대해 **훈련 데이터에 있는 평점**만 이용해 평균 및 취향을 구합니다.
-4. 예측할 게임과 평가한 게임들의 유사도를 가중치로 사용하여 사용자 평균에서의 **평점 편차**를 평균합니다.
-5. 학습용 평점이 있는 게임을 제외하고 예상 평점 상위 10개를 추천합니다.
-
-수식 (평점이 존재하는 학습 게임 집합을 `I(u)`라 표기):
-
-```text
-μ_u = mean(r_ui for i in I(u))
-s(i,j) = cosine(feature_i, feature_j)
-
-r_hat(u,j) = μ_u + Σ_(i in I(u)) [s(j,i) × (r_ui - μ_u)] / Σ_(i in I(u)) s(j,i)
-```
-
-분모가 0이면 `μ_u`, 사용자 기록 자체가 없으면 `global_train_mean`을 반환합니다. 마지막 값은 1~10으로 clip합니다. **신규 사용자에게 반환하는 전체 평균은 개인화 추천이 아닙니다.** 별도 온보딩 설문 없이는 사용자 Cold Start가 해결되지 않습니다.
-
-## 공통 평가 — 공식 4개 지표
-
-- 공통 보고 항목: **RMSE / MAE / Hit Rate@10 / Catalog Coverage@10**. 순수 Content-based 추천 목록으로 측정하며, 인기도 가중치는 사용하지 않습니다.
-
-- **RMSE**: `sqrt(mean((prediction-rating)^2))` — 낮을수록 좋음.
-- **MAE**: `mean(abs(prediction-rating))` — 낮을수록 좋음.
-- **Hit Rate@10**: test(또는 validation)에서 8점 이상인 항목이 하나 이상 있는 **평가 가능한 사용자**에 대해, 학습에서 관측되지 않은 게임 전체를 대상으로 Top-10을 만든 뒤 숨긴 긍정 항목이 하나라도 있는 사용자 비율. 높을수록 좋음.
-- **Catalog Coverage@10**: 같은 평가 대상 사용자들의 Top-10 추천 전체에서 등장한 **고유 게임 수 ÷ 공통 후보 게임 수**. 높을수록 폭넓은 아이템을 추천한다는 뜻이지만, 반드시 정확하거나 개인화된 추천이란 의미는 아닙니다. Hit Rate와 동일한 사용자 표본으로 계산합니다.
-- 일반적인 `Precision@10`이 아닙니다. **평점이 없는 게임을 음성 레이블(싫어함)로 취급하지 않습니다.** 이 방식도 숨겨진 긍정 피드백이 매우 적다는 평가 편향이 있고 실제 사용자 만족도와 같지 않습니다.
-- Hit Rate의 `eligible_users`, `evaluated_users`도 반드시 함께 보고하세요. 계산비용을 줄이기 위해 기본 최대 500명만 사용하며 **시드 고정 무작위 추출**입니다.
-- 특징 조합(`mechanics`, `themes`, `both`)은 `val`의 RMSE가 최소인 설정으로 고르고, 오직 그 설정만 `test`에 평가합니다.
-
-## 팀원이 붙이는 법
-
-`docs/TEAM_HANDOFF.md`에 필요한 파일/함수/라이브러리 예시가 있습니다. 핵심은 두 줄입니다.
-
-```python
-model.fit(train, games, mechanics, themes)    # Content-based 전용
-model.predict("user_id", "game_id")           # 모든 모델의 공통 규격 -> float 1..10
-```
-
-SVD 또는 Memory-CF에서 `predict_many`, `recommend`를 직접 구현하기 어렵다면 `boardrec.adapters.PredictAdapter`로 `predict()`만 연결하세요. Hybrid에는 Content-based와 CF 두 모델의 예측 점수를 같은 1~10 스케일로 사용하고 α는 **validation에서만 선택**합니다.
-
-## 실제 실험 결과
-
-실제 BGG 파일로 5,000명을 표본 추출해 실험했고, 마지막에 4,997명이 남았습니다. Validation 최저 RMSE 모델은 Mechanics+Themes였으며, Test RMSE **1.2457**, Test MAE **0.9399**, sampled Hit Rate@10 **0.032**였습니다. 상세한 실험 조건/한계 및 그래프는 [docs/ACTUAL_BGG_RUN.md](docs/ACTUAL_BGG_RUN.md)와 [examples/real_bgg_5000/](examples/real_bgg_5000/)에 있습니다. 원본 데이터, 개인 식별이 가능한 계정명/평점은 저장소에 업로드하지 않습니다.
-
-## 파일 목록
+## 파일 구조
 
 ```text
 boardrec/
-  cli.py             # prepare / run / demo 명령어
-  preprocessing.py   # 메모리 절약형 3-pass CSV 읽기
-  bgg_fast.py        # BGG ZIP 실제 데이터용 1-pass 고속 전처리
-  bgg_io.py          # ZIP 및 CSV 구조 검사
-  content.py         # ContentBasedRecommender
-  evaluation.py      # rating_metrics, hit_rate_at_k, evaluate
-  experiments.py     # feature 비교 및 결과 저장
-  adapters.py        # 팀원 모델 predict 함수 연결
-  demo_data.py       # 전적으로 synthetic인 샘플 생성
-examples/
-  teammate_integration.py   # 통합 예제: 실제 CF 대신 단순 baseline
-
-docs/TEAM_HANDOFF.md        # 팀원에게 전달할 계약
-
-tests/                     # 자동 단위/통합 테스트
+  preprocessing.py     # CSV 정제, 게임/사용자 필터, 사용자별 데이터 분할
+  bgg_fast.py          # 실제 대용량 BGG CSV 고속 전처리
+  bgg_io.py            # ZIP 압축 해제 / 파일·컬럼 확인
+  content.py           # Content-based: Mechanics/Themes + Cosine Similarity
+  evaluation.py        # RMSE, MAE, Hit Rate@10, Catalog Coverage@10
+  experiments.py       # Validation 모델 선택, 평가·그래프
+  adapters.py          # 팀원 모델 공통 인터페이스 연결
+  cli.py               # 실행 명령
+  demo_data.py         # 기능 검증용 Synthetic data 생성
+  memory_cf.py         # 팀원이 추가 예정 (아직 없음)
+  svd.py               # 팀원이 추가 예정 (아직 없음)
+  hybrid.py            # 팀원이 추가 예정 (아직 없음)
+scripts/run_bgg.py     # 실제 BGG ZIP 실행
+tests/                 # 자동 테스트
+docs/TEAM_HANDOFF.md   # 팀원 개발·통합 가이드
+docs/EVALUATION_POLICY.md  # 최종 평가 기준
+docs/ACTUAL_BGG_RUN.md # 실제 데이터 실험 기록
+examples/real_bgg_5000/   # 1차 실험 집계 결과
+examples/real_bgg_official_1000/ # Validation 집계 결과
 ```
 
-## 라이브러리 및 데이터 참조
+## PPT 계획에 따른 전처리
 
-- Scikit-learn — cosine-compatible sparse L2 normalization: https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.normalize.html
-- BGG XML API 문서: https://boardgamegeek.com/wiki/page/BGG_XML_API2
-- BGG XML API 이용약관: https://boardgamegeek.com/wiki/page/XML_API_Terms_of_Use
-- 예시로 기획한 Kaggle 출처: https://www.kaggle.com/datasets/threnjen/board-games-database-from-boardgamegeek (실제 데이터/학습 권한 사전 확인 필수)
+1. 전체 데이터에서 평점이 많은 **상위 게임 1,000개** 선정
+2. 이 게임들에 대해 **평점 20개 이상** 기록한 사용자만 남김
+3. 너무 크면 사용자 무작위 표본 추출 (seed=42)
+4. 중복 사용자-게임 평점 정리 후 **사용자별 Train 80% / Validation 10% / Test 10%** 분할
 
-추가 자료: [`docs/GITHUB_PUBLISH.md`](docs/GITHUB_PUBLISH.md)에는 팀원 공유/게시 방법을 적어뒀습니다. [`examples/synthetic_results/`](examples/synthetic_results/)에는 실제 데이터가 아닌 **가상 데이터 실행 결과**를 첨부했습니다.
+**주의:** 기획 PPT의 사용자 **1만~2만 명**은 실험 규모 후보였습니다. 현재 실제 실행 완료는 **최대 5,000명 추출 → 정제 후 4,997명**이며, 1만~2만 명 실험이 완료된 것은 아닙니다. 게임 선별은 분할 전 전체 평점 수를 기준으로 하므로 선택 편향이 존재하며, **추천 점수에 인기도를 넣는 것과는 다릅니다.**
 
-## 제한사항
+## 설치 및 실행
 
-- 최초 게임 선별에서 전체 평점 파일의 **평가 개수**를 사용하므로 split 후 holdout의 항목 존재 여부가 데이터셋 선택에 간접적으로 반영될 수 있습니다. 엄격한 inductive 평가라면 catalog 선정 규칙을 학습 데이터만으로 다시 설계해야 합니다.
-- 2026-10-26 기준 실제 BGG ZIP의 헤더/형태와 연결하여 4,997명 표본 실험을 수행했습니다. 다만 권한 문제는 별도이며 20,000명 실행은 완료되지 않았습니다.
-- 트레이닝 기록이 없거나 feature overlap이 없는 데이터의 평점은 mean fallback을 사용합니다.
-- Top-K는 **학습에서 미평가한 게임**이라는 뜻이며, 실제 플레이하지 않은 게임과 같다고 단정하지 않습니다.
-- 제안 시스템/콘텐츠 기반은 학습 데이터를 사용하는 것을 전제하므로 BGG 권리자로부터의 허가 문제를 해결하기 전에는 synthetic demo만 사용하세요.
+Python 3.10 이상.
+
+```bash
+pip install -e ".[dev]"
+python -m pytest -q
+python -m boardrec.cli demo --top-games 35 --min-user-ratings 8 --max-users 25
+```
+
+실제 BGG 데이터 사용권한을 확인하고, ZIP을 `data/raw/`에 준비한 경우:
+
+```bash
+python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirmed --top-games 1000 --min-user-ratings 20 --max-users 5000 --seed 42
+```
+
+사용권한 확인 없이 `--rights-confirmed`를 사용하면 안 됩니다. Kaggle에서 내려받을 수 있다는 사실 자체가 머신러닝 학습 허가를 의미하지는 않습니다. RAM이 부족하면 `--low-memory`를 추가합니다.
+
+입력/출력 형식: `train.csv`, `val.csv`, `test.csv`는 공통으로 `user_id, game_id, rating` (IDs are strings, ratings 1–10)을 사용합니다. `data/raw`, `data/processed`, `outputs`는 Git에서 제외합니다.
+
+## 최종 평가 지표 — 4개
+
+| Metric | 목적 |
+|---|---|
+| **RMSE** ↓ | 평점 예측 오차 (큰 오차에 민감) |
+| **MAE** ↓ | 평점 예측 평균 절대 오차 |
+| **Hit Rate@10** ↑ | Validation/Test에서 실제 8점 이상을 준 게임이 Top-10에 하나 이상 포함된 사용자 비율 |
+| **Catalog Coverage@10** ↑ | 평가 대상 사용자 전체의 Top-10에 등장한 서로 다른 게임 수 / 공통 후보 게임 수 |
+
+게임에 평점이 없다는 것은 **싫어한다는 뜻이 아니므로**, Hit Rate는 관측된 선호 항목에 대한 Offline 지표입니다. 평가 대상 사용자 수와 후보 게임 수를 함께 명시합니다. 상세 원칙: [Evaluation Policy](docs/EVALUATION_POLICY.md).
+
+현재 순수 Content-based (Mechanics + Themes) **Validation** 결과: RMSE **1.2384**, MAE **0.9390**, Hit Rate@10 **6.1%**, Catalog Coverage@10 **50.4%**. 마지막 두 지표는 1,000명 표본입니다. **Test 결과와 혼동하지 마세요.**
+
+## 팀원 작업
+
+1. 저장소를 **clone**한 뒤 `pip install -e ".[dev]"` 실행.
+2. `boardrec/memory_cf.py`, `boardrec/svd.py`, `boardrec/hybrid.py` 파일을 추가.
+3. `predict(user_id, game_id) -> float (1~10)` 인터페이스와 공통 전처리 데이터를 재사용.
+4. 같은 Validation 데이터로 설정을 고른 후 **RMSE / MAE / Hit Rate@10 / Coverage@10**으로 비교하고, Test를 튜닝에 사용하지 않음.
+5. 새 모델마다 `tests/`에 테스트를 추가하고 Pull Request로 합치는 것을 권장.
+
+구체적인 연결 예제는 [TEAM_HANDOFF](docs/TEAM_HANDOFF.md) 참조. **Private 저장소이므로 팀원은 GitHub `Settings → Collaborators`에서 따로 초대해야 push할 수 있습니다.**
+
+### BGG 데이터 이용 유의
+
+BGG 사이트/API 데이터에는 AI 학습 관련 이용 제한이 있습니다. 데이터 제공 및 사용 권한을 별도로 확인하세요. 원본/사용자별 평가 로그를 GitHub에 올리지 마세요.

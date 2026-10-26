@@ -1,5 +1,0 @@
-feature_set,split,rmse,mae,n_ratings,hit_rate@10,eligible_users,evaluated_users,hit_count,relevance_threshold,limitation
-mechanics,val,0.9604849623345155,0.8235196054541996,50,0.6666666666666666,3,3,2,8.0,Sparse held-out positives; unknown games are not negatives.
-themes,val,1.013119265673416,0.8597092807718907,50,0.6666666666666666,3,3,2,8.0,Sparse held-out positives; unknown games are not negatives.
-both,val,0.9908223556455633,0.8451673023070714,50,0.3333333333333333,3,3,1,8.0,Sparse held-out positives; unknown games are not negatives.
-mechanics,test,1.0662468563389635,0.8302321938752296,50,1.0,1,1,1,8.0,Sparse held-out positives; unknown games are not negatives.
