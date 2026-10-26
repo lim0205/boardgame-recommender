@@ -1,0 +1,85 @@
+{
+  "ranking_selection": "Maximum validation Hit Rate@10; tie-break favors higher content weight",
+  "selection": {
+    "feature_set": "both",
+    "content_weight": 0.0
+  },
+  "best_validation": {
+    "feature_set": "both",
+    "content_weight": 0.0,
+    "validation_hit_rate_at_10": 0.339,
+    "hits": 339,
+    "evaluated_users": 1000,
+    "eligible_users": 4479,
+    "distinct_recommended_games": 54
+  },
+  "test": {
+    "hit_rate_at_10": 0.306,
+    "hits": 306,
+    "evaluated_users": 1000,
+    "eligible_users": 4460,
+    "distinct_recommended_games": 52
+  },
+  "balanced_tradeoff": {
+    "feature_set": "both",
+    "content_weight": 0.1
+  },
+  "balanced_validation": {
+    "feature_set": "both",
+    "content_weight": 0.1,
+    "validation_hit_rate_at_10": 0.322,
+    "hits": 322,
+    "evaluated_users": 1000,
+    "eligible_users": 4479,
+    "distinct_recommended_games": 98
+  },
+  "balanced_test": {
+    "hit_rate_at_10": 0.299,
+    "hits": 299,
+    "evaluated_users": 1000,
+    "eligible_users": 4460,
+    "distinct_recommended_games": 94
+  },
+  "balanced_selection_criterion": "Validation-only: nonzero content weight, <=2 pp hit-rate loss, >=1.5x distinct recommendation coverage",
+  "validation_popularity_baseline": {
+    "feature_set": "mechanics",
+    "content_weight": 0.0,
+    "validation_hit_rate_at_10": 0.339,
+    "hits": 339,
+    "evaluated_users": 1000,
+    "eligible_users": 4479,
+    "distinct_recommended_games": 54
+  },
+  "validation_pure_content": [
+    {
+      "feature_set": "mechanics",
+      "content_weight": 1.0,
+      "validation_hit_rate_at_10": 0.055,
+      "hits": 55,
+      "evaluated_users": 1000,
+      "eligible_users": 4479,
+      "distinct_recommended_games": 430
+    },
+    {
+      "feature_set": "themes",
+      "content_weight": 1.0,
+      "validation_hit_rate_at_10": 0.051,
+      "hits": 51,
+      "evaluated_users": 1000,
+      "eligible_users": 4479,
+      "distinct_recommended_games": 610
+    },
+    {
+      "feature_set": "both",
+      "content_weight": 1.0,
+      "validation_hit_rate_at_10": 0.061,
+      "hits": 61,
+      "evaluated_users": 1000,
+      "eligible_users": 4479,
+      "distinct_recommended_games": 504
+    }
+  ],
+  "data_note": "User-provided BGG, 4,997-user sampled prepared data. No user identities stored.",
+  "evaluation_caveat": "Offline positive-only labels; not live CTR or actual user satisfaction.",
+  "test_caveat": "Test split had been inspected before this improvement project; post-hoc exploratory comparison, not pristine holdout."
+}
