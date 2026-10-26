@@ -1,5 +1,15 @@
 # Board Game Recommender — ML Term Project
-**추천 평가 지표 확장:** [NDCG, Recall, Coverage, Personalization, Tail Hit 실험](docs/MULTI_METRIC_EVALUATION.md) — 실제 BGG Validation 사용자 1,000명, Test 재평가 없이 비교.
+
+## 현재 공식 실험 기준 (2026-10-27)
+
+- **추천 알고리즘: 순수 Content-based Filtering.** 게임의 Mechanics/Themes + 사용자의 Train 평점만 사용하며 추천 점수에 게임 인기도를 섞지 않습니다. 기본 `boardrec.cli run` / `scripts/run_bgg.py` 실행은 인기도 결합을 호출하지 않습니다.
+- **필수 평가 3개:** RMSE, MAE, Hit Rate@10. **추가 지표 1개:** Catalog Coverage@10. 그 외 NDCG/Recall/Personalization/Long-tail 분석은 이전 탐색용 자료로만 보존하며 공식 비교표에서는 제외합니다.
+- 모델 간 공정한 비교를 위해 동일한 Train/Validation 분할, 동일한 후보 게임 목록, 동일한 Hit Rate/Coverage 사용자 표본과 Top-10 설정을 사용하세요.
+- **주의:** 사전 전처리에서 평점 수 상위 1,000개 게임을 선택하는 기준은 그대로 유지합니다. 이는 데이터 축소용 인기 게임 필터이며, 추천 점수에 인기도를 결합하는 것과는 구분해야 합니다.
+- 기준 및 보고 방법: [EVALUATION_POLICY.md](docs/EVALUATION_POLICY.md).
+
+
+**이전 탐색 실험 (공식 평가에서 제외):** [NDCG, Recall, Coverage, Personalization, Tail Hit 실험](docs/MULTI_METRIC_EVALUATION.md).
 
 
 Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Evaluation**.
@@ -8,7 +18,7 @@ Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Ev
 > **상태:** 인공 데이터 및 사용자가 제공한 BGG ZIP으로 **실제 실험 완료(4,997명 / 362,787평점)**. 자세한 숫자와 제약: [실제 데이터 실험 보고서](docs/ACTUAL_BGG_RUN.md).
 > **데이터 사용 주의:** BGG XML API 약관에는 사이트/API 데이터의 AI 학습 목적 사용을 제한하는 조항이 있습니다. Kaggle 게시 여부와 무관하게 실제 데이터 이용 허가 범위를 먼저 확인하세요. 이 저장소에는 BGG 데이터가 없습니다.
 
-## 최신 실제 데이터 추천 순위 개선 (2026-10-26)
+## 이전 인기도 혼합 실험 — 기록용, 현재 기본 모델에서 제외 (2026-10-26)
 
 [Popularity Baseline + Content/Popularity Ranking 실제 BGG 실험](docs/RANKING_IMPROVEMENT.md).
 Validation Hit Rate@10(1,000명): 인기순 33.9%, 콘텐츠 10%+인기도 90% 32.2%, 순수 콘텐츠 6.1%.
@@ -116,11 +126,14 @@ r_hat(u,j) = μ_u + Σ_(i in I(u)) [s(j,i) × (r_ui - μ_u)] / Σ_(i in I(u)) s(
 
 분모가 0이면 `μ_u`, 사용자 기록 자체가 없으면 `global_train_mean`을 반환합니다. 마지막 값은 1~10으로 clip합니다. **신규 사용자에게 반환하는 전체 평균은 개인화 추천이 아닙니다.** 별도 온보딩 설문 없이는 사용자 Cold Start가 해결되지 않습니다.
 
-## 공통 평가
+## 공통 평가 — 공식 4개 지표
+
+- 공통 보고 항목: **RMSE / MAE / Hit Rate@10 / Catalog Coverage@10**. 순수 Content-based 추천 목록으로 측정하며, 인기도 가중치는 사용하지 않습니다.
 
 - **RMSE**: `sqrt(mean((prediction-rating)^2))` — 낮을수록 좋음.
 - **MAE**: `mean(abs(prediction-rating))` — 낮을수록 좋음.
 - **Hit Rate@10**: test(또는 validation)에서 8점 이상인 항목이 하나 이상 있는 **평가 가능한 사용자**에 대해, 학습에서 관측되지 않은 게임 전체를 대상으로 Top-10을 만든 뒤 숨긴 긍정 항목이 하나라도 있는 사용자 비율. 높을수록 좋음.
+- **Catalog Coverage@10**: 같은 평가 대상 사용자들의 Top-10 추천 전체에서 등장한 **고유 게임 수 ÷ 공통 후보 게임 수**. 높을수록 폭넓은 아이템을 추천한다는 뜻이지만, 반드시 정확하거나 개인화된 추천이란 의미는 아닙니다. Hit Rate와 동일한 사용자 표본으로 계산합니다.
 - 일반적인 `Precision@10`이 아닙니다. **평점이 없는 게임을 음성 레이블(싫어함)로 취급하지 않습니다.** 이 방식도 숨겨진 긍정 피드백이 매우 적다는 평가 편향이 있고 실제 사용자 만족도와 같지 않습니다.
 - Hit Rate의 `eligible_users`, `evaluated_users`도 반드시 함께 보고하세요. 계산비용을 줄이기 위해 기본 최대 500명만 사용하며 **시드 고정 무작위 추출**입니다.
 - 특징 조합(`mechanics`, `themes`, `both`)은 `val`의 RMSE가 최소인 설정으로 고르고, 오직 그 설정만 `test`에 평가합니다.
