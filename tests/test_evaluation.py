@@ -24,6 +24,9 @@ def test_rating_and_hit_metrics():
     assert math.isclose(result["mae"], 1.0)
     assert result["hit_rate@1"] == 1.0
     assert result["eligible_users"] == 2
+    assert result["catalog_coverage@1"] == 2 / 5
+    assert result["distinct_recommended_games"] == 2
+    assert result["candidate_catalog_size"] == 5
     assert set(model.recommend("u", n=3).game_id) == {"C", "D", "E"}
 
 
