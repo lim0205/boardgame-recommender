@@ -1,4 +1,6 @@
 # Board Game Recommender — ML Term Project
+**추천 평가 지표 확장:** [NDCG, Recall, Coverage, Personalization, Tail Hit 실험](docs/MULTI_METRIC_EVALUATION.md) — 실제 BGG Validation 사용자 1,000명, Test 재평가 없이 비교.
+
 
 Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Evaluation**.
 두 명이 독립적으로 작업한 모델을 같은 데이터/평가 규칙으로 연결하도록 설계했습니다.
