@@ -22,9 +22,10 @@ boardrec/
   adapters.py          # 팀원 모델 공통 인터페이스 연결
   cli.py               # 실행 명령
   demo_data.py         # 기능 검증용 Synthetic data 생성
-  memory_cf.py         # 팀원이 추가 예정 (아직 없음)
-  svd.py               # 팀원이 추가 예정 (아직 없음)
-  hybrid.py            # 팀원이 추가 예정 (아직 없음)
+  memory_cf.py          # 팀원이 추가 예정
+  svd.py                # 구현 완료: Truncated SVD
+  svd_experiments.py    # 구현 완료: SVD Validation 실험
+  hybrid.py             # 팀원이 추가 예정
 scripts/run_bgg.py     # 실제 BGG ZIP 실행
 tests/                 # 자동 테스트
 docs/TEAM_HANDOFF.md   # 팀원 개발·통합 가이드
