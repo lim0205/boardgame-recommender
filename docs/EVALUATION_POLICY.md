@@ -23,6 +23,16 @@ RMSE and MAE should be presented together because they capture different error s
 
 Other measures (NDCG@10, Recall@10, Personalization, Tail Hit Rate) are **optional prior exploratory analyses**, not required for the final comparison table. There is no need to tune a model on all metrics.
 
+## Actual BGG validation result (no popularity ranking)
+
+The pure `mechanics + themes` Content-based model was evaluated on the real user-provided 4,997-user processed BGG dataset. **RMSE and MAE use all 36,212 Validation ratings; Hit Rate and Coverage use the same 1,000 seeded, eligible Validation users**.
+
+| RMSE ↓ | MAE ↓ | Hit Rate@10 ↑ | Catalog Coverage@10 ↑ |
+|---:|---:|---:|---:|
+| **1.2384** | **0.9390** | **6.1% (61/1,000 users)** | **50.4% (504/1,000 games)** |
+
+This is **Validation**, not a fresh Test result. The originally reported 3.2% Test Hit Rate used a different 250-user sample; do not mix these into one comparison row. Full aggregate JSON: [validation_metrics.json](../examples/real_bgg_official_1000/validation_metrics.json).
+
 ## Protocol and cautions
 
 1. Compare `mechanics`, `themes`, `both` Content-based feature sets on **Validation** (not Test). For continuity with the original assignment, choose the feature set by minimum Validation RMSE; report the four metrics for that feature set.
