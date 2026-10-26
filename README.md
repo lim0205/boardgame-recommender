@@ -1,5 +1,8 @@
 # Board Game Recommender — ML Term Project
 
+**BGG 원본 ZIP 연동:** [실제 데이터 실행 절차와 현재 미완료 항목](docs/BGG_REAL_DATA.md). BGG 원본 데이터를 내려받거나 실제 모델 성능을 측정한 상태는 아닙니다. 사용 허가를 확인한 후 `python scripts/run_bgg.py --archive data/raw/bgg_dataset.zip --rights-confirmed` 명령으로 실행할 수 있습니다.
+
+
 Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Evaluation**.
 두 명이 독립적으로 작업한 모델을 같은 데이터/평가 규칙으로 연결하도록 설계했습니다.
 
