@@ -2,8 +2,9 @@
 
 Do not train or tune with the test split. RMSE/MAE include all held-out ratings.
 HitRate@10 measures whether ANY held-out positive item (rating >= threshold)
-was recommended among all unobserved catalog items. Unrated != negative;
-this is an incomplete-label offline proxy, not an online success rate.
+was recommended among all unobserved catalog items. Catalog Coverage@10
+measures recommendation breadth for the SAME sampled eligible users.
+Unrated != negative; Hit Rate is an incomplete-label offline proxy.
 """
 from __future__ import annotations
 import math
@@ -46,10 +47,26 @@ def hit_rate_at_k(model, holdout: pd.DataFrame, k: int = 10,
         str(uid): set(group.game_id.astype(str))
         for uid, group in positive.groupby("user_id")
     }
-    hits = sum(bool(set(model.recommend(uid, n=k).game_id.astype(str)) & positives_by_user[uid])
-               for uid in positive_users)
+    hits = 0
+    distinct_recommendations: set[str] = set()
+    for uid in positive_users:
+        recommended = set(model.recommend(uid, n=k).game_id.astype(str))
+        hits += bool(recommended & positives_by_user[uid])
+        distinct_recommendations.update(recommended)
     n_eval = len(positive_users)
+
+    # Coverage is comparable only if every model shares the same catalog.
+    # ContentBasedRecommender exposes game_ids_; PredictAdapter exposes catalog_.
+    catalog = getattr(model, "game_ids_", None)
+    if catalog is None:
+        catalog = getattr(model, "catalog_", None)
+    catalog_size = len(catalog) if catalog is not None else None
+    coverage = (len(distinct_recommendations) / catalog_size
+                if n_eval and catalog_size else float("nan"))
     return {f"hit_rate@{k}": hits / n_eval if n_eval else float("nan"),
+            f"catalog_coverage@{k}": coverage,
+            "distinct_recommended_games": len(distinct_recommendations),
+            "candidate_catalog_size": catalog_size,
             "eligible_users": eligible_total, "evaluated_users": n_eval,
             "hit_count": int(hits), "relevance_threshold": relevant_threshold,
             "limitation": "Sparse held-out positives; unknown games are not negatives."}
