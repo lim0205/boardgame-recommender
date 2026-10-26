@@ -1,0 +1,58 @@
+{
+  "selected_by": "lowest validation RMSE",
+  "best_feature_set": "mechanics",
+  "validation": [
+    {
+      "feature_set": "mechanics",
+      "split": "val",
+      "rmse": 0.9604849623345155,
+      "mae": 0.8235196054541996,
+      "n_ratings": 50,
+      "hit_rate@10": 0.6666666666666666,
+      "eligible_users": 3,
+      "evaluated_users": 3,
+      "hit_count": 2,
+      "relevance_threshold": 8.0,
+      "limitation": "Sparse held-out positives; unknown games are not negatives."
+    },
+    {
+      "feature_set": "themes",
+      "split": "val",
+      "rmse": 1.013119265673416,
+      "mae": 0.8597092807718907,
+      "n_ratings": 50,
+      "hit_rate@10": 0.6666666666666666,
+      "eligible_users": 3,
+      "evaluated_users": 3,
+      "hit_count": 2,
+      "relevance_threshold": 8.0,
+      "limitation": "Sparse held-out positives; unknown games are not negatives."
+    },
+    {
+      "feature_set": "both",
+      "split": "val",
+      "rmse": 0.9908223556455633,
+      "mae": 0.8451673023070714,
+      "n_ratings": 50,
+      "hit_rate@10": 0.3333333333333333,
+      "eligible_users": 3,
+      "evaluated_users": 3,
+      "hit_count": 1,
+      "relevance_threshold": 8.0,
+      "limitation": "Sparse held-out positives; unknown games are not negatives."
+    }
+  ],
+  "test": {
+    "rmse": 1.0662468563389635,
+    "mae": 0.8302321938752296,
+    "n_ratings": 50,
+    "hit_rate@10": 1.0,
+    "eligible_users": 1,
+    "evaluated_users": 1,
+    "hit_count": 1,
+    "relevance_threshold": 8.0,
+    "limitation": "Sparse held-out positives; unknown games are not negatives."
+  },
+  "example_user": "demo_user_001",
+  "warning": "Demo performance is not real-dataset performance; held-out items are sparsely labeled."
+}
