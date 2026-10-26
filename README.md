@@ -4,8 +4,8 @@
 
 ## 프로젝트 현황
 
-- **구현 완료 (담당 A):** BGG CSV 전처리, Mechanics/Themes 기반 Content-based Filtering, 공통 평가, 실험 실행, 테스트
-- **팀원 구현 예정 (담당 B):** Memory-based Collaborative Filtering, SVD (Model-based CF), 최종 Hybrid (Content + CF)
+- **구현 완료 (담당 A):** BGG CSV 전처리, Mechanics/Themes 기반 Content-based Filtering, **Model-based CF (SVD)**, 공통 평가, 실험 실행, 테스트
+- **팀원 구현 예정 (담당 B):** Memory-based Collaborative Filtering, 최종 Hybrid (Content + CF)
 - **실제 데이터 실험:** 게임 1,000개 · 사용자 4,997명 · 평점 362,787건. 최종 비교 표본이 아닌, 우선 완료된 5,000명 규모 실험입니다.
 - **원본 데이터는 저장소에 없음.** 원본 평점/Username/개인별 학습 데이터는 커밋하지 않습니다.
 
@@ -79,7 +79,7 @@ python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirme
 ## 팀원 작업
 
 1. 저장소를 **clone**한 뒤 `pip install -e ".[dev]"` 실행.
-2. `boardrec/memory_cf.py`, `boardrec/svd.py`, `boardrec/hybrid.py` 파일을 추가.
+2. `boardrec/memory_cf.py`, `boardrec/hybrid.py` 파일을 추가. `boardrec/svd.py`는 이미 구현되어 있습니다.
 3. `predict(user_id, game_id) -> float (1~10)` 인터페이스와 공통 전처리 데이터를 재사용.
 4. 같은 Validation 데이터로 설정을 고른 후 **RMSE / MAE / Hit Rate@10 / Coverage@10**으로 비교하고, Test를 튜닝에 사용하지 않음.
 5. 새 모델마다 `tests/`에 테스트를 추가하고 Pull Request로 합치는 것을 권장.
@@ -89,3 +89,18 @@ python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirme
 ### BGG 데이터 이용 유의
 
 BGG 사이트/API 데이터에는 AI 학습 관련 이용 제한이 있습니다. 데이터 제공 및 사용 권한을 별도로 확인하세요. 원본/사용자별 평가 로그를 GitHub에 올리지 마세요.
+
+
+## Model-based CF — SVD 구현 완료
+
+- `boardrec/svd.py`: **Truncated SVD** 기반 잠재 요인 추천 모델 (Train에서만 학습).
+- `boardrec/svd_experiments.py`, `scripts/run_svd.py`: Validation RMSE 기준 `n_factors`, `residual_scale` 비교.
+- **실제 BGG Validation (250명 동일 표본)**: SVD RMSE **1.1109**, MAE **0.8418**, Hit Rate@10 **18.8%**, Coverage@10 **4.8%**. Content-based는 각각 **1.2384**, **0.9390**, **4.0%**, **34.3%**.
+- 정확도는 개선됐지만 SVD 추천이 48종 게임에 집중된다는 한계가 있습니다. 인기순 혼합 추천은 하지 않습니다.
+- [SVD 구현 및 실험 보고서](docs/SVD_IMPLEMENTATION.md) · [SVD Validation CSV](examples/real_bgg_svd_5000/validation_metrics.csv)
+
+```bash
+python scripts/run_svd.py --data-dir data/processed --out outputs/bgg_svd --max-hit-users 250
+```
+
+이 실험은 기존에 확인된 Test를 다시 튜닝에 사용하지 않은 **Validation-only 비교**입니다.

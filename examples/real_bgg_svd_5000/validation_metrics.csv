@@ -1,0 +1,7 @@
+n_factors,residual_scale,item_reg,split,rmse,mae,n_ratings,hit_rate@10,catalog_coverage@10,distinct_recommended_games,candidate_catalog_size,eligible_users,evaluated_users,hit_count,relevance_threshold,limitation
+10,1.0,10.0,val,1.1108873836357425,0.8418240548810021,36212,0.188,0.048,48,1000,4479,250,47,8.0,Sparse held-out positives; unknown games are not negatives.
+20,1.0,10.0,val,1.111317567334893,0.8415414850563034,36212,0.172,0.052,52,1000,4479,250,43,8.0,Sparse held-out positives; unknown games are not negatives.
+40,1.0,10.0,val,1.1127235866996457,0.8423514758752599,36212,0.184,0.071,71,1000,4479,250,46,8.0,Sparse held-out positives; unknown games are not negatives.
+20,0.5,10.0,val,1.1170548253641202,0.8469438767200811,36212,0.148,0.035,35,1000,4479,250,37,8.0,Sparse held-out positives; unknown games are not negatives.
+10,0.5,10.0,val,1.117408821064716,0.8474306513276929,36212,0.16,0.034,34,1000,4479,250,40,8.0,Sparse held-out positives; unknown games are not negatives.
+40,0.5,10.0,val,1.1175526306401764,0.8471625360189985,36212,0.148,0.038,38,1000,4479,250,37,8.0,Sparse held-out positives; unknown games are not negatives.

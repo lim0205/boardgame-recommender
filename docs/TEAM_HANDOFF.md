@@ -99,3 +99,13 @@ boardrec/hybrid.py
 ## 7. 알려진 평가 제약
 
 오프라인 held-out 10%는 한 사용자가 평가한 게임 수가 20개라면 2개 수준이어서, 추천 10개에 해당 게임이 나타날 확률이 낮을 수 있습니다. Hit Rate@10은 평가 가능한 사용자에게만 정의되며, 순위 추천의 실제 효과는 클릭/플레이 피드백 없이 확정할 수 없습니다.
+
+
+## 현재 진행 상태 — 2026-10-27
+
+**Model-based CF (Truncated SVD)는 이미 `boardrec/svd.py`에 구현되었습니다.**
+따라서 팀원이 작성할 핵심 파일은 **`boardrec/memory_cf.py` 및 `boardrec/hybrid.py`** 두 개입니다.
+SVD와 Content-based 모델은 둘 다 `fit`, `predict`, `predict_many`, `recommend` API를 제공합니다.
+준호님은 같은 `train.csv`·`val.csv`·`test.csv` 형식과 4개 지표를 재사용해주세요.
+`python scripts/run_svd.py --data-dir data/processed`는 Train 학습과 Validation 비교만 수행합니다.
+

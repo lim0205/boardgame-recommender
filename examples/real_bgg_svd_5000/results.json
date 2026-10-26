@@ -1,0 +1,18 @@
+{
+  "model": "Sparse truncated SVD with user mean + item bias",
+  "selected_by": "Lowest Validation RMSE; no Test used",
+  "best_hyperparameters": {
+    "n_factors": 10,
+    "residual_scale": 1,
+    "item_reg": 10
+  },
+  "validation_metrics": {
+    "rmse": 1.1108873836357425,
+    "mae": 0.8418240548810021,
+    "hit_rate@10": 0.188,
+    "catalog_coverage@10": 0.048
+  },
+  "evaluated_users": 250,
+  "candidate_catalog_size": 1000,
+  "note": "Train-only fit; Validation-only tuning. Unrated items are unlabeled. Previous work already inspected the Test split, therefore the old Test is not pristine."
+}
