@@ -56,7 +56,7 @@ def run_experiments(data_dir: str | Path, output_dir: str | Path,
     example.to_csv(output / "example_top10.csv", index=False)
     report = {"selected_by": "lowest validation RMSE", "best_feature_set": best_variant,
               "validation": [_jsonable(r) for r in records],
-              "test": _jsonable(test_metrics), "example_user": example_user,
-              "warning": "Demo performance is not real-dataset performance; held-out items are sparsely labeled."}
+              "test": _jsonable(test_metrics), "example_user": "redacted",
+              "warning": "Offline held-out positives are sparsely labeled; do not interpret Hit Rate as online satisfaction."}
     (output / "results.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     return report
