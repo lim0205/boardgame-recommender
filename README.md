@@ -1,12 +1,9 @@
 # Board Game Recommender — ML Term Project
 
-**BGG 원본 ZIP 연동:** [실제 데이터 실행 절차와 현재 미완료 항목](docs/BGG_REAL_DATA.md). BGG 원본 데이터를 내려받거나 실제 모델 성능을 측정한 상태는 아닙니다. 사용 허가를 확인한 후 `python scripts/run_bgg.py --archive data/raw/bgg_dataset.zip --rights-confirmed` 명령으로 실행할 수 있습니다.
-
-
 Python 프로젝트: **데이터 전처리 + Content-based Filtering + 공통 Evaluation**.
 두 명이 독립적으로 작업한 모델을 같은 데이터/평가 규칙으로 연결하도록 설계했습니다.
 
-> **상태:** 코드와 synthetic demo 테스트 완료. 실제 BoardGameGeek(Kaggle) 데이터에서는 **아직 실행하지 않았습니다.**
+> **상태:** 인공 데이터 및 사용자가 제공한 BGG ZIP으로 **실제 실험 완료(4,997명 / 362,787평점)**. 자세한 숫자와 제약: [실제 데이터 실험 보고서](docs/ACTUAL_BGG_RUN.md).
 > **데이터 사용 주의:** BGG XML API 약관에는 사이트/API 데이터의 AI 학습 목적 사용을 제한하는 조항이 있습니다. Kaggle 게시 여부와 무관하게 실제 데이터 이용 허가 범위를 먼저 확인하세요. 이 저장소에는 BGG 데이터가 없습니다.
 
 ## 담당 범위
@@ -35,6 +32,15 @@ python -m boardrec.cli demo --top-games 35 --min-user-ratings 8 --max-users 25
 무작위로 **생성한 인공 데이터**를 사용하여 전처리→모델 평가까지 실행합니다. 생성된 `outputs/demo/results.json`, `metrics.csv`, `validation_rmse.png`, `example_top10.csv`는 예제 실험 결과이며 실제 추천 성능이 아닙니다.
 
 ## 실제 CSV 실행 방법 (사용 허가가 확인된 경우만)
+
+원본 ZIP을 직접 준비한 경우 권장 실행 방법 (`max-users=5000`, 약 4GB 이상의 메모리 권장):
+
+```bash
+python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirmed --max-users 5000
+```
+
+3-pass streaming 경로가 필요하다면 `--low-memory`를 추가하세요. 아래의 수동 2단계 명령도 유지되지만 대용량 CSV에서는 느립니다.
+
 
 원본 4개 CSV 파일을 `data/raw/`에 직접 배치합니다. 원본은 Git에 포함되지 않습니다.
 
@@ -115,12 +121,18 @@ model.predict("user_id", "game_id")           # 모든 모델의 공통 규격 -
 
 SVD 또는 Memory-CF에서 `predict_many`, `recommend`를 직접 구현하기 어렵다면 `boardrec.adapters.PredictAdapter`로 `predict()`만 연결하세요. Hybrid에는 Content-based와 CF 두 모델의 예측 점수를 같은 1~10 스케일로 사용하고 α는 **validation에서만 선택**합니다.
 
+## 실제 실험 결과
+
+실제 BGG 파일로 5,000명을 표본 추출해 실험했고, 마지막에 4,997명이 남았습니다. Validation 최저 RMSE 모델은 Mechanics+Themes였으며, Test RMSE **1.2457**, Test MAE **0.9399**, sampled Hit Rate@10 **0.032**였습니다. 상세한 실험 조건/한계 및 그래프는 [docs/ACTUAL_BGG_RUN.md](docs/ACTUAL_BGG_RUN.md)와 [examples/real_bgg_5000/](examples/real_bgg_5000/)에 있습니다. 원본 데이터, 개인 식별이 가능한 계정명/평점은 저장소에 업로드하지 않습니다.
+
 ## 파일 목록
 
 ```text
 boardrec/
   cli.py             # prepare / run / demo 명령어
-  preprocessing.py   # 3-pass CSV 읽기, 필터링, 전처리/분할
+  preprocessing.py   # 메모리 절약형 3-pass CSV 읽기
+  bgg_fast.py        # BGG ZIP 실제 데이터용 1-pass 고속 전처리
+  bgg_io.py          # ZIP 및 CSV 구조 검사
   content.py         # ContentBasedRecommender
   evaluation.py      # rating_metrics, hit_rate_at_k, evaluate
   experiments.py     # feature 비교 및 결과 저장
@@ -146,7 +158,7 @@ tests/                     # 자동 단위/통합 테스트
 ## 제한사항
 
 - 최초 게임 선별에서 전체 평점 파일의 **평가 개수**를 사용하므로 split 후 holdout의 항목 존재 여부가 데이터셋 선택에 간접적으로 반영될 수 있습니다. 엄격한 inductive 평가라면 catalog 선정 규칙을 학습 데이터만으로 다시 설계해야 합니다.
-- 제공 파일과 테스트는 **실제 BGG 데이터와 연결해 보지 않은 범용 코드**입니다. 원본 CSV의 실제 헤더/형태를 확인한 뒤 필요하면 alias를 보완하세요.
+- 2026-10-26 기준 실제 BGG ZIP의 헤더/형태와 연결하여 4,997명 표본 실험을 수행했습니다. 다만 권한 문제는 별도이며 20,000명 실행은 완료되지 않았습니다.
 - 트레이닝 기록이 없거나 feature overlap이 없는 데이터의 평점은 mean fallback을 사용합니다.
 - Top-K는 **학습에서 미평가한 게임**이라는 뜻이며, 실제 플레이하지 않은 게임과 같다고 단정하지 않습니다.
 - 제안 시스템/콘텐츠 기반은 학습 데이터를 사용하는 것을 전제하므로 BGG 권리자로부터의 허가 문제를 해결하기 전에는 synthetic demo만 사용하세요.
