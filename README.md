@@ -33,6 +33,9 @@ python -m boardrec.cli demo --top-games 35 --min-user-ratings 8 --max-users 25
 
 ## 실제 CSV 실행 방법 (사용 허가가 확인된 경우만)
 
+**실제 BGG ZIP에서 확인한 실행 방법:** `python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirmed --max-users 5000 --max-hit-users 250` (원본을 직접 다운로드하거나 권한을 확인한 후 실행). 더 적은 메모리를 사용할 경우 `--low-memory`를 추가하세요. 실제 실행 보고서는 [여기](docs/ACTUAL_BGG_RUN.md)를 참고하세요.
+
+
 원본 ZIP을 직접 준비한 경우 권장 실행 방법 (`max-users=5000`, 약 4GB 이상의 메모리 권장):
 
 ```bash
@@ -68,7 +71,7 @@ python -m boardrec.cli run --data-dir data/processed --out outputs --max-hit-use
 
 ## 준비된 입력/출력 규격
 
-`data/processed` 폴더의 세 평점 파일은 전부 동일한 컬럼을 사용합니다.
+`data/processed` 폴더의 세 평점 파일은 전부 동일한 컬럼을 사용합니다. 개인정보가 포함될 수 있으니 Git에 추가하지 마세요.
 
 | 파일 | 열 | 용도 |
 |---|---|---|
@@ -154,6 +157,14 @@ tests/                     # 자동 단위/통합 테스트
 - 예시로 기획한 Kaggle 출처: https://www.kaggle.com/datasets/threnjen/board-games-database-from-boardgamegeek (실제 데이터/학습 권한 사전 확인 필수)
 
 추가 자료: [`docs/GITHUB_PUBLISH.md`](docs/GITHUB_PUBLISH.md)에는 팀원 공유/게시 방법을 적어뒀습니다. [`examples/synthetic_results/`](examples/synthetic_results/)에는 실제 데이터가 아닌 **가상 데이터 실행 결과**를 첨부했습니다.
+
+## 익명화한 실제 BGG 결과
+
+- 실제 파일: `archive (1).zip` (사용자가 제공한 원본; GitHub에는 원본을 포함하지 않음)
+- **4,997 users / 1,000 games / 362,787 ratings** — 고정 시드 42의 사용자 표본
+- Validation winner: Mechanics + Themes (RMSE **1.2384**)
+- Final Test: RMSE **1.2457**, MAE **0.9399**, sampled Hit Rate@10 **3.2%** (8 of 250)
+- 자세한 설정/해석: [실제 BGG 실험 기록](docs/ACTUAL_BGG_RUN.md), [집계 지표/그래프](examples/real_bgg_5000/)
 
 ## 제한사항
 
