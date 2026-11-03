@@ -1,0 +1,61 @@
+{
+  "split": "test",
+  "note": "Settings fixed on Validation beforehand; TEST evaluated once. Earlier exploratory work already viewed the Test split, so it is not a pristine holdout. No popularity term. Unrated items are unlabeled.",
+  "evaluated_users": 250,
+  "candidate_catalog_size": 1000,
+  "results": {
+    "content": {
+      "settings": {
+        "feature_set": "both"
+      },
+      "rmse": 1.2457271182860084,
+      "mae": 0.9399263411923265,
+      "hit_rate@10": 0.032,
+      "catalog_coverage@10": 0.315
+    },
+    "svd": {
+      "settings": {
+        "item_reg": 10.0,
+        "n_factors": 10,
+        "residual_scale": 1.0,
+        "seed": 42
+      },
+      "rmse": 1.115733187949212,
+      "mae": 0.8446837642435482,
+      "hit_rate@10": 0.108,
+      "catalog_coverage@10": 0.042
+    },
+    "memory_cf": {
+      "settings": {
+        "item_reg": 10.0,
+        "k": 40,
+        "kind": "item",
+        "min_support": 3,
+        "shrinkage": 10.0,
+        "similarity": "pearson"
+      },
+      "rmse": 1.098940545315788,
+      "mae": 0.8296405930115832,
+      "hit_rate@10": 0.068,
+      "catalog_coverage@10": 0.081
+    },
+    "hybrid_svd": {
+      "settings": {
+        "alpha": 0.1
+      },
+      "rmse": 1.1161401468848842,
+      "mae": 0.8448612736610384,
+      "hit_rate@10": 0.108,
+      "catalog_coverage@10": 0.046
+    },
+    "hybrid_memory_cf": {
+      "settings": {
+        "alpha": 0.1
+      },
+      "rmse": 1.101882557415925,
+      "mae": 0.831713501929425,
+      "hit_rate@10": 0.068,
+      "catalog_coverage@10": 0.087
+    }
+  }
+}

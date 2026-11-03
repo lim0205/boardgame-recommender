@@ -1,11 +1,11 @@
 # Board Game Recommender — Machine Learning Term Project
 
-실제 BoardGameGeek(BGG) 평점과 게임 메타데이터를 이용하는 보드게임 추천 시스템 프로젝트입니다. **현재 구현된 추천기는 순수 Content-based Filtering이며, 추천 점수에 Popularity를 혼합하지 않습니다.**
+실제 BoardGameGeek(BGG) 평점과 게임 메타데이터를 이용하는 보드게임 추천 시스템 프로젝트입니다. **Content-based, Model-based CF(SVD), Memory-based CF, Hybrid(Content + CF)가 구현되어 있으며, 어떤 모델도 추천 점수에 Popularity를 혼합하지 않습니다.**
 
 ## 프로젝트 현황
 
 - **구현 완료 (담당 A):** BGG CSV 전처리, Mechanics/Themes 기반 Content-based Filtering, **Model-based CF (SVD)**, 공통 평가, 실험 실행, 테스트
-- **팀원 구현 예정 (담당 B):** Memory-based Collaborative Filtering, 최종 Hybrid (Content + CF)
+- **구현 완료 (담당 B):** Memory-based Collaborative Filtering (User/Item kNN), Hybrid (Content + CF) — [구현 문서](docs/MEMORY_CF_HYBRID.md)
 - **실제 데이터 실험:** 게임 1,000개 · 사용자 4,997명 · 평점 362,787건. 최종 비교 표본이 아닌, 우선 완료된 5,000명 규모 실험입니다.
 - **원본 데이터는 저장소에 없음.** 원본 평점/Username/개인별 학습 데이터는 커밋하지 않습니다.
 
@@ -22,14 +22,20 @@ boardrec/
   adapters.py          # 팀원 모델 공통 인터페이스 연결
   cli.py               # 실행 명령
   demo_data.py         # 기능 검증용 Synthetic data 생성
-  memory_cf.py          # 팀원이 추가 예정
+  memory_cf.py          # 구현 완료: User/Item-based kNN CF
+  memory_cf_experiments.py # Memory CF Validation 실험
   svd.py                # 구현 완료: Truncated SVD
   svd_experiments.py    # 구현 완료: SVD Validation 실험
-  hybrid.py             # 팀원이 추가 예정
+  hybrid.py             # 구현 완료: alpha·Content + (1−alpha)·CF
+  hybrid_experiments.py # Hybrid alpha Validation 실험
+  final_test.py         # Validation에서 고정한 설정의 Test 1회 평가
 scripts/run_bgg.py     # 실제 BGG ZIP 실행
+scripts/run_memory_cf.py, scripts/run_hybrid.py # Memory CF / Hybrid Validation 실행
+scripts/run_final_test.py # 선택된 모델들의 최종 Test 1회 평가
 tests/                 # 자동 테스트
 docs/TEAM_HANDOFF.md   # 팀원 개발·통합 가이드
 docs/EVALUATION_POLICY.md  # 최종 평가 기준
+docs/MEMORY_CF_HYBRID.md   # Memory CF / Hybrid 구현 및 실행 방법
 docs/ACTUAL_BGG_RUN.md # 실제 데이터 실험 기록
 examples/real_bgg_5000/   # 1차 실험 집계 결과
 examples/real_bgg_official_1000/ # Validation 집계 결과

@@ -1,0 +1,17 @@
+kind,similarity,k,min_support,shrinkage,split,rmse,mae,n_ratings,hit_rate@10,catalog_coverage@10,distinct_recommended_games,candidate_catalog_size,eligible_users,evaluated_users,hit_count,relevance_threshold,limitation
+item,pearson,40,3,10.0,val,1.0959601232570673,0.8293007835878449,36212,0.156,0.075,75,1000,4479,250,39,8.0,Sparse held-out positives; unknown games are not negatives.
+item,pearson,80,3,10.0,val,1.097219686628458,0.8302144173396687,36212,0.152,0.07,70,1000,4479,250,38,8.0,Sparse held-out positives; unknown games are not negatives.
+item,pearson,20,3,10.0,val,1.0984015327288061,0.8316615239123105,36212,0.152,0.109,109,1000,4479,250,38,8.0,Sparse held-out positives; unknown games are not negatives.
+user,pearson,80,3,10.0,val,1.1052424294459775,0.8364014667161149,36212,0.168,0.062,62,1000,4479,250,42,8.0,Sparse held-out positives; unknown games are not negatives.
+item,cosine,80,3,10.0,val,1.1059229929123067,0.8360920080194697,36212,0.148,0.031,31,1000,4479,250,37,8.0,Sparse held-out positives; unknown games are not negatives.
+user,pearson,40,3,10.0,val,1.1072706454086583,0.8388099566187261,36212,0.16,0.076,76,1000,4479,250,40,8.0,Sparse held-out positives; unknown games are not negatives.
+item,cosine,40,3,10.0,val,1.1096680681553714,0.839122525418052,36212,0.144,0.04,40,1000,4479,250,36,8.0,Sparse held-out positives; unknown games are not negatives.
+item,pearson,10,3,10.0,val,1.1157162774186062,0.8447416196893929,36212,0.156,0.168,168,1000,4479,250,39,8.0,Sparse held-out positives; unknown games are not negatives.
+user,pearson,20,3,10.0,val,1.116687838858178,0.8469338298231083,36212,0.164,0.113,113,1000,4479,250,41,8.0,Sparse held-out positives; unknown games are not negatives.
+item,cosine,20,3,10.0,val,1.122498472328493,0.850086618929771,36212,0.152,0.063,63,1000,4479,250,38,8.0,Sparse held-out positives; unknown games are not negatives.
+user,cosine,80,3,10.0,val,1.126324749963758,0.8555121799163372,36212,0.156,0.033,33,1000,4479,250,39,8.0,Sparse held-out positives; unknown games are not negatives.
+user,cosine,40,3,10.0,val,1.133812220265894,0.862173981279101,36212,0.148,0.044,44,1000,4479,250,37,8.0,Sparse held-out positives; unknown games are not negatives.
+user,pearson,10,3,10.0,val,1.140574854485241,0.8673849807693708,36212,0.152,0.157,157,1000,4479,250,38,8.0,Sparse held-out positives; unknown games are not negatives.
+user,cosine,20,3,10.0,val,1.1446386910319366,0.8721325426581944,36212,0.172,0.069,69,1000,4479,250,43,8.0,Sparse held-out positives; unknown games are not negatives.
+item,cosine,10,3,10.0,val,1.1469635950721888,0.8699243495105294,36212,0.156,0.102,102,1000,4479,250,39,8.0,Sparse held-out positives; unknown games are not negatives.
+user,cosine,10,3,10.0,val,1.1650951320921614,0.8907663754809264,36212,0.152,0.113,113,1000,4479,250,38,8.0,Sparse held-out positives; unknown games are not negatives.
