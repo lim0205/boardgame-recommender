@@ -16,11 +16,13 @@ def rating_metrics(model, holdout: pd.DataFrame) -> dict:
     if holdout.empty:
         return {"rmse": float("nan"), "mae": float("nan"), "n_ratings": 0}
     total_squared, total_abs, n = 0.0, 0.0, 0
+    # RMSE and MAE use every observed held-out rating, never only Top-10 hits.
     for uid, group in holdout.groupby("user_id", sort=False):
         pred = np.asarray(model.predict_many(str(uid), group.game_id.astype(str).tolist()), dtype=float)
         target = group.rating.to_numpy(dtype=float)
         if len(pred) != len(target) or not np.isfinite(pred).all():
             raise ValueError("Predictor returned invalid shape or non-finite value")
+        # err @ err sums squared errors; sqrt(sum / n) gives RMSE in rating points.
         err = pred - target
         total_squared += float(err @ err)
         total_abs += float(np.abs(err).sum())
@@ -32,6 +34,7 @@ def hit_rate_at_k(model, holdout: pd.DataFrame, k: int = 10,
                   relevant_threshold: float = 8.0, max_users: int | None = None) -> dict:
     if k < 1:
         raise ValueError("k must be positive")
+    # A relevant item means an OBSERVED held-out rating >= 8 (default).
     positive = holdout.loc[holdout.rating >= relevant_threshold]
     # Eligible users have at least one relevant item in the held-out data.
     positive_users = sorted(positive.user_id.astype(str).unique())
@@ -49,8 +52,10 @@ def hit_rate_at_k(model, holdout: pd.DataFrame, k: int = 10,
     }
     hits = 0
     distinct_recommendations: set[str] = set()
+    # Compute Top-10 metrics on the same seeded sample of eligible users.
     for uid in positive_users:
         recommended = set(model.recommend(uid, n=k).game_id.astype(str))
+        # One hit per user if ANY held-out relevant game appears in Top-10.
         hits += bool(recommended & positives_by_user[uid])
         distinct_recommendations.update(recommended)
     n_eval = len(positive_users)
@@ -61,6 +66,7 @@ def hit_rate_at_k(model, holdout: pd.DataFrame, k: int = 10,
     if catalog is None:
         catalog = getattr(model, "catalog_", None)
     catalog_size = len(catalog) if catalog is not None else None
+    # Coverage measures distinct recommended catalog items, not Recall@10.
     coverage = (len(distinct_recommendations) / catalog_size
                 if n_eval and catalog_size else float("nan"))
     return {f"hit_rate@{k}": hits / n_eval if n_eval else float("nan"),

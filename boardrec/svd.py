@@ -100,16 +100,20 @@ class SVDRecommender:
         for user, group in frame.groupby("user_id", sort=False):
             self.seen_[str(user)] = set(group.game_id.astype(str))
 
+        # Subtract TRAIN user means before learning residual latent factors.
         deviations = ratings - means[uidx]
         item_counts = np.bincount(iidx, minlength=n_items)
         bias_sum = np.bincount(iidx, weights=deviations, minlength=n_items)
+        # item_reg shrinks item rating offsets when only a few observations exist.
         self.item_bias_ = bias_sum / (item_counts + self.item_reg)
         residual = deviations - self.item_bias_[iidx]
+        # CSR stores observed rating residuals; absent cells are NOT zero-star ratings.
         sparse_residuals = csr_matrix((residual, (uidx, iidx)),
                                       shape=(n_users, n_items), dtype=np.float64)
         available = min(n_users, n_items) - 1
         self.effective_factors_ = min(self.n_factors, max(available, 0))
         if self.effective_factors_:
+            # SciPy svds: k=number of factors, which='LM'=largest singular values,
             u, singular, vt = svds(sparse_residuals, k=self.effective_factors_,
                                    which="LM", random_state=self.seed)
             # For reconstruction, use symmetric sqrt(sigma) factorization.
@@ -137,6 +141,7 @@ class SVDRecommender:
             raise KeyError(f"Unknown game(s): {missing[:5]}")
         indices = np.array([self.game_positions_[g] for g in requested])
         u = self.user_positions_.get(str(user_id))
+        # Cold-start user: fall back to TRAIN global mean plus item bias.
         mean = self.global_mean_ if u is None else self.user_means_[u]
         preds = mean + self.item_bias_[indices]
         if u is not None and self.effective_factors_:
@@ -148,6 +153,7 @@ class SVDRecommender:
             raise RuntimeError("Call fit before recommend")
         if n < 1:
             raise ValueError("n must be positive")
+        # Exclude TRAIN-rated games only; held-out games stay eligible for evaluation.
         seen = self.seen_.get(str(user_id), set())
         candidates = [g for g in self.game_ids_ if g not in seen]
         scores = self.predict_many(user_id, candidates)

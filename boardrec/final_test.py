@@ -49,6 +49,7 @@ def run_final_test(data_dir: str | Path, output_dir: str | Path, *,
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
 
+    # Reuse Validation-selected parameters; Test must not tune models.
     mcf = json.loads(Path(memory_cf_results).read_text(encoding="utf-8"))["best_hyperparameters"]
     mcf_params = {k: mcf[k] for k in ("kind", "similarity", "k", "min_support", "shrinkage", "item_reg")}
     svd_params = {"n_factors": 10, "residual_scale": 1.0, "item_reg": 10.0, "seed": 42,
@@ -59,6 +60,7 @@ def run_final_test(data_dir: str | Path, output_dir: str | Path, *,
                                 .fit(train, games, mechanics, themes))
     svd = CachedPredictions(SVDRecommender(**svd_params).fit(train, games))
     memory = CachedPredictions(MemoryCFRecommender(**mcf_params).fit(train, games))
+    # Alpha endpoints reconstruct the standalone models for a fair comparison.
     models = {
         "content": (HybridRecommender(content, svd, 1.0, train), {"feature_set": content_feature_set}),
         "svd": (HybridRecommender(content, svd, 0.0, train), svd_params),
@@ -73,6 +75,7 @@ def run_final_test(data_dir: str | Path, output_dir: str | Path, *,
 
     records = []
     for name, (model, params) in models.items():
+        # Rating error uses all Test ratings; Top-10 uses the same 250-user sample.
         measured = evaluate(model, test, max_hit_users=max_hit_users)
         records.append({"model": name, "split": "test",
                         "settings": json.dumps(params, sort_keys=True), **measured})

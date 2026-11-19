@@ -25,15 +25,18 @@ def run_svd_experiments(data_dir: str | Path, output_dir: str | Path, *,
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     records = []
+    # Changing k changes the truncated decomposition, so retrain for each factor count.
     for k in factors:
         model = SVDRecommender(n_factors=int(k), item_reg=float(item_reg),
                                residual_scale=1.0, seed=seed).fit(train, games)
         for scale in scales:
+            # The same learned factors can be evaluated at multiple residual scales.
             model.residual_scale = float(scale)
             measured = evaluate(model, val, max_hit_users=max_hit_users)
             records.append({"n_factors": int(k), "residual_scale": float(scale),
                             "item_reg": float(item_reg), "split": "val", **measured})
     table = pd.DataFrame(records).sort_values(['rmse','n_factors','residual_scale'])
+    # Select hyperparameters by Validation RMSE; leave Test untouched.
     best = table.iloc[0]
     table.to_csv(output / 'validation_metrics.csv', index=False)
     fig, ax = plt.subplots(figsize=(7.5, 4.5))

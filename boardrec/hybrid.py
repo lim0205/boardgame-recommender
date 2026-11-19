@@ -68,6 +68,7 @@ class HybridRecommender:
         if not requested:
             return np.array([], dtype=float)
         a = float(self.alpha)
+        # Blend two TRAIN-fitted 1..10 predictors: alpha=1 Content, alpha=0 CF.
         content = np.asarray(self.content_model.predict_many(str(user_id), requested), dtype=float)
         cf = np.asarray(self.cf_model.predict_many(str(user_id), requested), dtype=float)
         return np.clip(a * content + (1.0 - a) * cf, 1.0, 10.0)
@@ -75,6 +76,7 @@ class HybridRecommender:
     def recommend(self, user_id: str, n: int = 10) -> pd.DataFrame:
         if n < 1:
             raise ValueError("n must be positive")
+        # Candidate lists exclude games already rated in TRAIN.
         rated = self.rated_.get(str(user_id), set())
         candidates = [g for g in self.game_ids_ if g not in rated]
         scores = self.predict_many(user_id, candidates)
@@ -100,6 +102,7 @@ class CachedPredictions:
         user_id = str(user_id)
         requested = [str(g) for g in game_ids]
         cache = self._cache.setdefault(user_id, {})
+        # Cache component scores across the Validation alpha grid; predictions stay unchanged.
         missing = [g for g in dict.fromkeys(requested) if g not in cache]
         if missing:
             values = np.asarray(self.model.predict_many(user_id, missing), dtype=float)

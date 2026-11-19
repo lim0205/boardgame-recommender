@@ -46,6 +46,7 @@ def run_hybrid_experiments(data_dir: str | Path, output_dir: str | Path, *,
 
     content = CachedPredictions(ContentBasedRecommender(feature_set=content_feature_set)
                                 .fit(train, games, mechanics, themes))
+    # Fit CF components once; reuse their predictions across alpha values.
     cf_models = {
         "svd": CachedPredictions(SVDRecommender(**svd_params).fit(train, games)),
         "memory_cf": CachedPredictions(MemoryCFRecommender(**memory_cf_params).fit(train, games)),
@@ -53,6 +54,7 @@ def run_hybrid_experiments(data_dir: str | Path, output_dir: str | Path, *,
 
     records = []
     for cf_name, cf in cf_models.items():
+        # alpha=0/1 are pure models; interior values produce weighted hybrids.
         for alpha in alphas:
             model = HybridRecommender(content, cf, alpha=alpha, train=train)
             measured = evaluate(model, val, max_hit_users=max_hit_users)
@@ -74,6 +76,7 @@ def run_hybrid_experiments(data_dir: str | Path, output_dir: str | Path, *,
     fig.savefig(output / "validation_alpha.svg")
     plt.close(fig)
 
+    # Validation chooses settings; final_test uses the best INTERIOR alpha for each CF.
     ranked = table.sort_values(["rmse", "cf_model", "alpha"]).reset_index(drop=True)
     best = ranked.iloc[0]
 

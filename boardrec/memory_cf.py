@@ -45,11 +45,13 @@ def _co_rated_similarity(values: np.ndarray, mask: np.ndarray, *, min_support: i
     """
     x = values.astype(np.float32, copy=False)
     m = mask.astype(np.float32, copy=False)
+    # Masked dot products compare ratings only where both sides observed them.
     numer = x @ x.T
     sq = (x * x) @ m.T                     # sq[a, b] = sum over co-rated of x_a^2
     denom = np.sqrt(sq * sq.T)
     sims = np.zeros_like(numer)
     np.divide(numer, denom, out=sims, where=denom > 1e-12)
+    # Shared-rating count; min_support rejects weak pairs, shrinkage downweights others.
     support = m @ m.T
     sims[support < min_support] = 0.0
     if shrinkage > 0:
@@ -63,6 +65,7 @@ def _weighted_topk(sims: np.ndarray, resid: np.ndarray, valid: np.ndarray, k: in
     whose ``valid`` flag is set. Returns (adjustment, has_neighbour)."""
     w = np.where(valid & (sims > 0), sims, 0.0).astype(np.float64)
     n_cols = w.shape[1]
+    # np.argpartition keeps the top k positive neighbors without fully sorting.
     if k < n_cols:
         drop = np.argpartition(w, n_cols - k, axis=1)[:, :n_cols - k]
         np.put_along_axis(w, drop, 0.0, axis=1)
@@ -154,8 +157,10 @@ class MemoryCFRecommender:
         self.user_means_ = np.bincount(uidx, weights=ratings, minlength=n_users) / np.maximum(counts, 1)
         dev = ratings - self.user_means_[uidx]
         item_counts = np.bincount(iidx, minlength=n_items)
+        # Item bias represents mean rating deviation, NOT a popularity ranking.
         self.item_bias_ = np.bincount(iidx, weights=dev, minlength=n_items) / (item_counts + self.item_reg)
 
+        # Distinguish a missing rating from a known low rating using an observation mask.
         mask = np.zeros((n_users, n_items), dtype=bool)
         mask[uidx, iidx] = True
         rmat = np.zeros((n_users, n_items), dtype=np.float32)
@@ -165,6 +170,7 @@ class MemoryCFRecommender:
         self.mask_ = mask
         self.residuals_ = resid
 
+        # Pearson uses mean-centered ratings, unlike cosine on raw 1..10 values.
         if self.similarity == "cosine":
             sim_values = rmat
         elif self.kind == "user":
@@ -200,6 +206,7 @@ class MemoryCFRecommender:
         items = np.array([self.game_positions_[g] for g in requested])
         u = self.user_positions_.get(str(user_id))
         if u is None:
+            # With no TRAIN history, use the global baseline instead of neighbors.
             return np.clip(self.global_mean_ + self.item_bias_[items], 1.0, 10.0)
         preds = self.user_means_[u] + self.item_bias_[items]
         if self.kind == "user":
@@ -210,6 +217,7 @@ class MemoryCFRecommender:
             rated = np.flatnonzero(self.mask_[u])
             if rated.size == 0:
                 return np.clip(preds, 1.0, 10.0)
+            # Item-kNN compares each candidate with items rated by this user in TRAIN.
             sims = self.similarity_[np.ix_(items, rated)]
             resid = np.broadcast_to(self.residuals_[u, rated], sims.shape)
             adj, _ = _weighted_topk(sims, resid, np.ones_like(sims, dtype=bool), self.k)

@@ -89,9 +89,11 @@ class ContentBasedRecommender:
             columns = m_cols + t_cols
         if matrix.shape[1] == 0:
             raise ValueError("No nonzero binary features in selected metadata")
+        # sklearn.normalize: unit L2 length per game (axis=1) makes dot products cosine scores.
         self.features_ = normalize(matrix, norm="l2", axis=1).tocsr()
         self.feature_names_ = columns
         self.global_mean_ = float(train.rating.mean())
+        # Only TRAIN ratings build each user's rated-item profile and mean.
         self.user_profiles_: dict[str, tuple[np.ndarray, np.ndarray, float]] = {}
         for user, df in train.groupby("user_id", sort=False):
             df = df[df.game_id.isin(self.game_positions_)]
@@ -120,12 +122,14 @@ class ContentBasedRecommender:
             return np.full(len(requested), self.global_mean_, dtype=float)
         rated_pos, rated_scores, user_mean = profile
         requested_pos = [self.game_positions_[g] for g in requested]
+        # Compute candidate-to-history similarity on demand; avoid dense game x game storage.
         sims = (self.features_[requested_pos] @ self.features_[rated_pos].T).toarray()
         sims = np.maximum(sims, 0)
         # Relative preference: a 9 compared with user's mean of 6 is positive.
         numer = sims @ (rated_scores - user_mean)
         denom = sims.sum(axis=1)
         preds = np.full(len(requested), user_mean, dtype=float)
+        # np.divide(where=...) avoids zero division; no similar games => user-mean fallback.
         np.divide(numer, denom, out=preds, where=denom > 1e-12)
         # Result in preds currently relative deviation for nonzero denom.
         preds[denom > 1e-12] += user_mean

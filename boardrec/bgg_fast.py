@@ -28,6 +28,7 @@ def prepare_bgg_fast(ratings_path: str | Path, games_path: str | Path,
     """
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
+    # Read only BGGId/Username/Rating with compact dtypes to reduce RAM usage.
     data = pd.read_csv(ratings_path,
                        usecols=["BGGId", "Username", "Rating"],
                        dtype={"BGGId": "Int32", "Username": "string", "Rating": "float32"},
@@ -40,6 +41,7 @@ def prepare_bgg_fast(ratings_path: str | Path, games_path: str | Path,
     data = data.loc[data.Username.ne("")].copy()
     n_valid = len(data)
     LOG.info("%d ratings passed data validation", n_valid)
+    # Popularity defines the candidate catalog only; it is never added to scores.
     top_games = set(data.BGGId.value_counts().head(cfg.top_games).index.astype(int).tolist())
 
     games = normalize_metadata(pd.read_csv(games_path, low_memory=False))
@@ -54,6 +56,7 @@ def prepare_bgg_fast(ratings_path: str | Path, games_path: str | Path,
     eligible_before_sample = len(eligible)
     if not eligible:
         raise ValueError("No eligible users; lower min_user_ratings or increase top_games")
+    # A fixed seed makes user sampling reproducible across all experiments.
     if cfg.max_users is not None and len(eligible) > cfg.max_users:
         eligible = sorted(np.random.default_rng(cfg.seed).choice(
             eligible, cfg.max_users, replace=False).tolist())
@@ -67,6 +70,7 @@ def prepare_bgg_fast(ratings_path: str | Path, games_path: str | Path,
     })
     del data
     gc.collect()
+    # Deduplicate before re-checking the minimum 20 ratings per user.
     chosen = chosen.groupby(["user_id", "game_id"], as_index=False, sort=True).rating.mean()
     counts = chosen.user_id.value_counts()
     chosen = chosen.loc[chosen.user_id.isin(
@@ -74,6 +78,7 @@ def prepare_bgg_fast(ratings_path: str | Path, games_path: str | Path,
     if chosen.empty:
         raise ValueError("No eligible users after deduplicating ratings")
 
+    # Share the exact same per-user Train/Validation/Test split across models.
     splits = split_by_user(chosen, cfg)
     for name, subset in splits.items():
         subset.to_csv(output / f"{name}.csv", index=False)

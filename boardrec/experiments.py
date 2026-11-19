@@ -32,6 +32,7 @@ def run_experiments(data_dir: str | Path, output_dir: str | Path,
     validation = pd.DataFrame(records)
     if validation.rmse.notna().sum() == 0:
         raise ValueError("Validation RMSE is undefined; check data")
+    # Select the feature set on Validation RMSE, never on Test.
     best_variant = validation.sort_values(["rmse", "feature_set"]).iloc[0].feature_set
     # Test must never be used for variant selection.
     best_model = ContentBasedRecommender(feature_set=best_variant).fit(
@@ -41,6 +42,7 @@ def run_experiments(data_dir: str | Path, output_dir: str | Path,
                                                    "split": "test", **test_metrics}])],
                         ignore_index=True)
     results.to_csv(output / "metrics.csv", index=False)
+    # Export aggregate performance plots without user histories.
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.bar(validation.feature_set, validation.rmse)
     ax.set_ylabel("Validation RMSE (lower is better)")

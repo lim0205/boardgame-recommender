@@ -17,6 +17,7 @@ import pandas as pd
 
 LOGGER = logging.getLogger(__name__)
 
+# Normalize possible CSV headers to the shared user/game/rating schema.
 RATING_ALIASES = {
     "user_id": ["user_id", "userid", "username", "user", "member"],
     "game_id": ["game_id", "gameid", "bggid", "bgg_id", "item_id"],
@@ -99,10 +100,12 @@ def split_by_user(ratings: pd.DataFrame, cfg: PrepConfig) -> dict[str, pd.DataFr
         n = len(idx)
         if n < 3:
             raise ValueError("Each user must have at least 3 observations")
+        # Split every user's observations; keep at least one holdout in each partition.
         n_val = max(1, int(round(n * cfg.val_ratio)))
         n_test = max(1, int(round(n * (1 - cfg.train_ratio - cfg.val_ratio))))
         if n_val + n_test >= n:
             n_val, n_test = 1, 1
+        # Seeded random assignment ensures all models see the same held-out pairs.
         order = rng.permutation(idx)
         assignment[order[:n_val]] = "val"
         assignment[order[n_val:n_val + n_test]] = "test"
@@ -149,6 +152,7 @@ def prepare(ratings_path: str | Path, games_path: str | Path,
         part = part.loc[part.game_id.isin(selected_games)]
         for user, count in part.user_id.value_counts().items():
             user_counts[user] = user_counts.get(user, 0) + int(count)
+    # Count activity only among the selected game catalog (20+ in the real run).
     eligible = sorted(u for u, count in user_counts.items() if count >= cfg.min_user_ratings)
     if not eligible:
         raise ValueError("No eligible users: lower --min-user-ratings or --top-games")
@@ -167,6 +171,7 @@ def prepare(ratings_path: str | Path, games_path: str | Path,
         raise ValueError("No ratings remained after filtering")
     chosen = pd.concat(parts, ignore_index=True)
     # Resolve duplicate (user, game) records deterministically via mean.
+    # Merge duplicate labels so each user-game pair has exactly one target rating.
     chosen = chosen.groupby(["user_id", "game_id"], as_index=False, sort=True).rating.mean()
     chosen_users = chosen.user_id.value_counts()
     chosen = chosen[chosen.user_id.isin(chosen_users[chosen_users >= cfg.min_user_ratings].index)]

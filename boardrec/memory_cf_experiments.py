@@ -28,6 +28,7 @@ def run_memory_cf_experiments(data_dir: str | Path, output_dir: str | Path, *,
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     records = []
+    # Tune user/item CF, cosine/Pearson similarity and neighbor count on VAL only.
     for kind in kinds:
         for sim in similarities:
             # Similarities do not depend on k: fit once, then vary k.
@@ -35,6 +36,7 @@ def run_memory_cf_experiments(data_dir: str | Path, output_dir: str | Path, *,
                                         min_support=min_support, shrinkage=shrinkage,
                                         item_reg=item_reg).fit(train, games)
             for k in ks:
+                # Reuse each similarity matrix; changing k affects neighbor selection only.
                 model.k = int(k)
                 measured = evaluate(model, val, max_hit_users=max_hit_users)
                 records.append({"kind": kind, "similarity": sim, "k": int(k),
@@ -60,6 +62,7 @@ def run_memory_cf_experiments(data_dir: str | Path, output_dir: str | Path, *,
     fig.savefig(output / "validation_metrics.svg")
     plt.close(fig)
 
+    # Pick the lowest Validation RMSE; Test is not used for model selection.
     best = table.iloc[0]
     report = {
         "model": "kNN CF on train-only baseline residuals (user mean + shrunken item bias)",
