@@ -8,7 +8,7 @@ boardrec/
   bgg_fast.py          # 실제 대용량 BGG CSV 고속 전처리
   bgg_io.py            # ZIP 압축 해제 / 파일·컬럼 확인
   content.py           # Content-based: Mechanics/Themes + Cosine Similarity
-  evaluation.py        # RMSE, MAE, Hit Rate@10, Catalog Coverage@10
+  evaluation.py        # RMSE, MAE, Hit Rate@10, Recall@10, Catalog Coverage@10
   experiments.py       # Validation 모델 선택, 평가·그래프
   adapters.py          # 팀원 모델 공통 인터페이스 연결
   cli.py               # 실행 명령
@@ -60,19 +60,34 @@ python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirme
 
 입력/출력 형식: `train.csv`, `val.csv`, `test.csv`는 공통으로 `user_id, game_id, rating` (IDs are strings, ratings 1–10)을 사용합니다. `data/raw`, `data/processed`, `outputs`는 Git에서 제외합니다.
 
-## 최종 평가 지표 — 4개
+## 최종 평가 지표 — 5개
 
 | Metric | 목적 |
 |---|---|
 | **RMSE** ↓ | 평점 예측 오차 (큰 오차에 민감) |
 | **MAE** ↓ | 평점 예측 평균 절대 오차 |
 | **Hit Rate@10** ↑ | Validation/Test에서 실제 8점 이상을 준 게임이 Top-10에 하나 이상 포함된 사용자 비율 |
+| **Recall@10** ↑ | 사용자별 관련 Test 게임(평점 ≥8) 중 Top-10에 포함된 비율의 평균(Macro Recall) |
 | **Catalog Coverage@10** ↑ | 평가 대상 사용자 전체의 Top-10에 등장한 서로 다른 게임 수 / 공통 후보 게임 수 |
 
-게임에 평점이 없다는 것은 **싫어한다는 뜻이 아니므로**, Hit Rate는 관측된 선호 항목에 대한 Offline 지표입니다. 평가 대상 사용자 수와 후보 게임 수를 함께 명시합니다. 상세 원칙: [Evaluation Policy](docs/EVALUATION_POLICY.md).
+게임에 평점이 없다는 것은 **싫어한다는 뜻이 아니므로**, Hit Rate와 Recall은 관측된 선호 항목에 대한 Offline 지표입니다. 평가 대상 사용자 수와 후보 게임 수를 함께 명시합니다. 상세 원칙: [Evaluation Policy](docs/EVALUATION_POLICY.md).
 
 현재 순수 Content-based (Mechanics + Themes) **Validation** 결과: RMSE **1.2384**, MAE **0.9390**, Hit Rate@10 **6.1%**, Catalog Coverage@10 **50.4%**. 마지막 두 지표는 1,000명 표본입니다. **Test 결과와 혼동하지 마세요.**
 
 ## External APIs and parameter reference
 
 See [External Python APIs, model parameters, and reproducible commands](docs/EXTERNAL_APIS.md) for the source-code explanations required by the project specification.
+
+## 최종 Test Recall@10 (2026-11-22 추가)
+
+동일한 Test 36,003개 관측 평점, 기존 Top-10 평가 대상 250명(seed 42), 관련 평점 기준 ≥8을 사용해 사용자별 Recall을 Macro-average로 계산했습니다. 선정된 사용자들에 관측된 관련 Test 게임은 모두 834개입니다. Hit Rate/Coverage 및 추천된 고유 게임 수가 기존 결과와 일치함을 검증했습니다.
+
+| Model | Hit Rate@10 | Macro Recall@10 |
+|---|---:|---:|
+| Content-based | 3.2% | 0.97% |
+| SVD | 10.8% | **4.13%** |
+| Memory CF | 6.8% | 3.14% |
+| Hybrid + SVD | 10.8% | 4.11% |
+| Hybrid + Memory CF | 6.8% | 3.09% |
+
+원본 집계: [Final Test Metrics CSV](examples/real_bgg_memory_cf_hybrid/final_test_metrics.csv). Recall@10은 **Test 결과에서 모델을 재선정하거나 튜닝하지 않고** 동일한 추천 목록에 대해 추가로 계산했습니다. Missing Rating은 부정적 피드백으로 간주하지 않습니다.
