@@ -2,8 +2,9 @@
 
 Do not train or tune with the test split. RMSE/MAE include all held-out ratings.
 HitRate@10 measures whether ANY held-out positive item (rating >= threshold)
-was recommended among all unobserved catalog items. Catalog Coverage@10
-measures recommendation breadth for the SAME sampled eligible users.
+was recommended among unobserved catalog items. Macro Recall@10 averages
+per-user relevant-item retrieval on the SAME sampled eligible users.
+Catalog Coverage@10 measures recommendation breadth on those users.
 Unrated != negative; Hit Rate is an incomplete-label offline proxy.
 """
 from __future__ import annotations
@@ -51,12 +52,21 @@ def hit_rate_at_k(model, holdout: pd.DataFrame, k: int = 10,
         for uid, group in positive.groupby("user_id")
     }
     hits = 0
+    recall_sum = 0.0
+    relevant_retrieved = 0
+    relevant_total = 0
     distinct_recommendations: set[str] = set()
     # Compute Top-10 metrics on the same seeded sample of eligible users.
     for uid in positive_users:
         recommended = set(model.recommend(uid, n=k).game_id.astype(str))
-        # One hit per user if ANY held-out relevant game appears in Top-10.
-        hits += bool(recommended & positives_by_user[uid])
+        # Hit is binary per user, whereas Recall counts ALL observed positives recovered.
+        # Both use the same ranked list and only positive Test ratings, never unknown labels.
+        relevant_items = positives_by_user[uid]
+        retrieved = len(recommended & relevant_items)
+        hits += bool(retrieved)
+        recall_sum += retrieved / len(relevant_items)
+        relevant_retrieved += retrieved
+        relevant_total += len(relevant_items)
         distinct_recommendations.update(recommended)
     n_eval = len(positive_users)
 
@@ -70,11 +80,15 @@ def hit_rate_at_k(model, holdout: pd.DataFrame, k: int = 10,
     coverage = (len(distinct_recommendations) / catalog_size
                 if n_eval and catalog_size else float("nan"))
     return {f"hit_rate@{k}": hits / n_eval if n_eval else float("nan"),
+            # Macro-average: each eligible sampled user contributes equally.
+            f"recall@{k}": recall_sum / n_eval if n_eval else float("nan"),
             f"catalog_coverage@{k}": coverage,
             "distinct_recommended_games": len(distinct_recommendations),
             "candidate_catalog_size": catalog_size,
             "eligible_users": eligible_total, "evaluated_users": n_eval,
-            "hit_count": int(hits), "relevance_threshold": relevant_threshold,
+            "hit_count": int(hits), "relevant_retrieved": int(relevant_retrieved),
+            "relevant_total": int(relevant_total),
+            "relevance_threshold": relevant_threshold,
             "limitation": "Sparse held-out positives; unknown games are not negatives."}
 
 
