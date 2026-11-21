@@ -1,6 +1,6 @@
 {
   "split": "test",
-  "note": "Settings fixed on Validation beforehand; TEST evaluated once. Earlier exploratory work already viewed the Test split, so it is not a pristine holdout. No popularity term. Unrated items are unlabeled.",
+  "note": "Settings fixed on Validation beforehand; TEST evaluated once. Earlier exploratory work already viewed the Test split, so it is not a pristine holdout. No popularity term. Unrated items are unlabeled. Macro Recall@10 was calculated on the same 250 eligible users (seed 42, rating >=8).",
   "evaluated_users": 250,
   "candidate_catalog_size": 1000,
   "results": {
@@ -11,33 +11,36 @@
       "rmse": 1.2457271182860084,
       "mae": 0.9399263411923265,
       "hit_rate@10": 0.032,
-      "catalog_coverage@10": 0.315
+      "catalog_coverage@10": 0.315,
+      "recall@10": 0.009749579831932772
     },
     "svd": {
       "settings": {
-        "item_reg": 10.0,
+        "item_reg": 10,
         "n_factors": 10,
-        "residual_scale": 1.0,
+        "residual_scale": 1,
         "seed": 42
       },
       "rmse": 1.115733187949212,
       "mae": 0.8446837642435482,
       "hit_rate@10": 0.108,
-      "catalog_coverage@10": 0.042
+      "catalog_coverage@10": 0.042,
+      "recall@10": 0.041344021991080816
     },
     "memory_cf": {
       "settings": {
-        "item_reg": 10.0,
+        "item_reg": 10,
         "k": 40,
         "kind": "item",
         "min_support": 3,
-        "shrinkage": 10.0,
+        "shrinkage": 10,
         "similarity": "pearson"
       },
       "rmse": 1.098940545315788,
       "mae": 0.8296405930115832,
       "hit_rate@10": 0.068,
-      "catalog_coverage@10": 0.081
+      "catalog_coverage@10": 0.081,
+      "recall@10": 0.0313767082590612
     },
     "hybrid_svd": {
       "settings": {
@@ -46,7 +49,8 @@
       "rmse": 1.1161401468848842,
       "mae": 0.8448612736610384,
       "hit_rate@10": 0.108,
-      "catalog_coverage@10": 0.046
+      "catalog_coverage@10": 0.046,
+      "recall@10": 0.041121799768858595
     },
     "hybrid_memory_cf": {
       "settings": {
@@ -55,7 +59,8 @@
       "rmse": 1.101882557415925,
       "mae": 0.831713501929425,
       "hit_rate@10": 0.068,
-      "catalog_coverage@10": 0.087
+      "catalog_coverage@10": 0.087,
+      "recall@10": 0.03091503267973856
     }
   }
 }
