@@ -1,14 +1,5 @@
 # Board Game Recommender — Machine Learning Term Project
 
-실제 BoardGameGeek(BGG) 평점과 게임 메타데이터를 이용하는 보드게임 추천 시스템 프로젝트입니다. **Content-based, Model-based CF(SVD), Memory-based CF, Hybrid(Content + CF)가 구현되어 있으며, 어떤 모델도 추천 점수에 Popularity를 혼합하지 않습니다.**
-
-## 프로젝트 현황
-
-- **구현 완료 (담당 A):** BGG CSV 전처리, Mechanics/Themes 기반 Content-based Filtering, **Model-based CF (SVD)**, 공통 평가, 실험 실행, 테스트
-- **구현 완료 (담당 B):** Memory-based Collaborative Filtering (User/Item kNN), Hybrid (Content + CF) — [구현 문서](docs/MEMORY_CF_HYBRID.md)
-- **실제 데이터 실험:** 게임 1,000개 · 사용자 4,997명 · 평점 362,787건. 최종 비교 표본이 아닌, 우선 완료된 5,000명 규모 실험입니다.
-- **원본 데이터는 저장소에 없음.** 원본 평점/Username/개인별 학습 데이터는 커밋하지 않습니다.
-
 ## 파일 구조
 
 ```text
@@ -48,7 +39,6 @@ examples/real_bgg_official_1000/ # Validation 집계 결과
 3. 너무 크면 사용자 무작위 표본 추출 (seed=42)
 4. 중복 사용자-게임 평점 정리 후 **사용자별 Train 80% / Validation 10% / Test 10%** 분할
 
-**주의:** 기획 PPT의 사용자 **1만~2만 명**은 실험 규모 후보였습니다. 현재 실제 실행 완료는 **최대 5,000명 추출 → 정제 후 4,997명**이며, 1만~2만 명 실험이 완료된 것은 아닙니다. 게임 선별은 분할 전 전체 평점 수를 기준으로 하므로 선택 편향이 존재하며, **추천 점수에 인기도를 넣는 것과는 다릅니다.**
 
 ## 설치 및 실행
 
@@ -82,36 +72,6 @@ python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirme
 게임에 평점이 없다는 것은 **싫어한다는 뜻이 아니므로**, Hit Rate는 관측된 선호 항목에 대한 Offline 지표입니다. 평가 대상 사용자 수와 후보 게임 수를 함께 명시합니다. 상세 원칙: [Evaluation Policy](docs/EVALUATION_POLICY.md).
 
 현재 순수 Content-based (Mechanics + Themes) **Validation** 결과: RMSE **1.2384**, MAE **0.9390**, Hit Rate@10 **6.1%**, Catalog Coverage@10 **50.4%**. 마지막 두 지표는 1,000명 표본입니다. **Test 결과와 혼동하지 마세요.**
-
-## 팀원 작업
-
-1. 저장소를 **clone**한 뒤 `pip install -e ".[dev]"` 실행.
-2. `boardrec/memory_cf.py`, `boardrec/hybrid.py` 파일을 추가. `boardrec/svd.py`는 이미 구현되어 있습니다.
-3. `predict(user_id, game_id) -> float (1~10)` 인터페이스와 공통 전처리 데이터를 재사용.
-4. 같은 Validation 데이터로 설정을 고른 후 **RMSE / MAE / Hit Rate@10 / Coverage@10**으로 비교하고, Test를 튜닝에 사용하지 않음.
-5. 새 모델마다 `tests/`에 테스트를 추가하고 Pull Request로 합치는 것을 권장.
-
-구체적인 연결 예제는 [TEAM_HANDOFF](docs/TEAM_HANDOFF.md) 참조. **Private 저장소이므로 팀원은 GitHub `Settings → Collaborators`에서 따로 초대해야 push할 수 있습니다.**
-
-### BGG 데이터 이용 유의
-
-BGG 사이트/API 데이터에는 AI 학습 관련 이용 제한이 있습니다. 데이터 제공 및 사용 권한을 별도로 확인하세요. 원본/사용자별 평가 로그를 GitHub에 올리지 마세요.
-
-
-## Model-based CF — SVD 구현 완료
-
-- `boardrec/svd.py`: **Truncated SVD** 기반 잠재 요인 추천 모델 (Train에서만 학습).
-- `boardrec/svd_experiments.py`, `scripts/run_svd.py`: Validation RMSE 기준 `n_factors`, `residual_scale` 비교.
-- **실제 BGG Validation (250명 동일 표본)**: SVD RMSE **1.1109**, MAE **0.8418**, Hit Rate@10 **18.8%**, Coverage@10 **4.8%**. Content-based는 각각 **1.2384**, **0.9390**, **4.0%**, **34.3%**.
-- 정확도는 개선됐지만 SVD 추천이 48종 게임에 집중된다는 한계가 있습니다. 인기순 혼합 추천은 하지 않습니다.
-- [SVD 구현 및 실험 보고서](docs/SVD_IMPLEMENTATION.md) · [SVD Validation CSV](examples/real_bgg_svd_5000/validation_metrics.csv)
-
-```bash
-python scripts/run_svd.py --data-dir data/processed --out outputs/bgg_svd --max-hit-users 250
-```
-
-이 실험은 기존에 확인된 Test를 다시 튜닝에 사용하지 않은 **Validation-only 비교**입니다.
-
 
 ## External APIs and parameter reference
 
