@@ -111,3 +111,8 @@ python scripts/run_svd.py --data-dir data/processed --out outputs/bgg_svd --max-
 ```
 
 이 실험은 기존에 확인된 Test를 다시 튜닝에 사용하지 않은 **Validation-only 비교**입니다.
+
+
+## External APIs and parameter reference
+
+See [External Python APIs, model parameters, and reproducible commands](docs/EXTERNAL_APIS.md) for the source-code explanations required by the project specification.
