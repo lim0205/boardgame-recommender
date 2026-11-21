@@ -28,7 +28,7 @@ from .memory_cf import MemoryCFRecommender
 from .preprocessing import load_prepared
 from .svd import SVDRecommender
 
-METRICS = ("rmse", "mae", "hit_rate@10", "catalog_coverage@10")
+METRICS = ("rmse", "mae", "hit_rate@10", "recall@10", "catalog_coverage@10")
 
 
 def select_hybrid_alphas(hybrid_validation_csv: str | Path) -> dict[str, float]:
