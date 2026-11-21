@@ -1,93 +1,78 @@
-# Board Game Recommender — Machine Learning Term Project
+# Board-Game Recommendation System
 
-## 파일 구조
+**Machine Learning Term Project · Team 4**
 
-```text
-boardrec/
-  preprocessing.py     # CSV 정제, 게임/사용자 필터, 사용자별 데이터 분할
-  bgg_fast.py          # 실제 대용량 BGG CSV 고속 전처리
-  bgg_io.py            # ZIP 압축 해제 / 파일·컬럼 확인
-  content.py           # Content-based: Mechanics/Themes + Cosine Similarity
-  evaluation.py        # RMSE, MAE, Hit Rate@10, Recall@10, Catalog Coverage@10
-  experiments.py       # Validation 모델 선택, 평가·그래프
-  adapters.py          # 팀원 모델 공통 인터페이스 연결
-  cli.py               # 실행 명령
-  demo_data.py         # 기능 검증용 Synthetic data 생성
-  memory_cf.py          # 구현 완료: User/Item-based kNN CF
-  memory_cf_experiments.py # Memory CF Validation 실험
-  svd.py                # 구현 완료: Truncated SVD
-  svd_experiments.py    # 구현 완료: SVD Validation 실험
-  hybrid.py             # 구현 완료: alpha·Content + (1−alpha)·CF
-  hybrid_experiments.py # Hybrid alpha Validation 실험
-  final_test.py         # Validation에서 고정한 설정의 Test 1회 평가
-scripts/run_bgg.py     # 실제 BGG ZIP 실행
-scripts/run_memory_cf.py, scripts/run_hybrid.py # Memory CF / Hybrid Validation 실행
-scripts/run_final_test.py # 선택된 모델들의 최종 Test 1회 평가
-tests/                 # 자동 테스트
-docs/TEAM_HANDOFF.md   # 팀원 개발·통합 가이드
-docs/EVALUATION_POLICY.md  # 최종 평가 기준
-docs/MEMORY_CF_HYBRID.md   # Memory CF / Hybrid 구현 및 실행 방법
-docs/ACTUAL_BGG_RUN.md # 실제 데이터 실험 기록
-examples/real_bgg_5000/   # 1차 실험 집계 결과
-examples/real_bgg_official_1000/ # Validation 집계 결과
-```
+A reproducible Python-based recommender for BoardGameGeek (BGG) ratings. It predicts 1–10 ratings and ranks ten board games for each user. Four families of methods were implemented and compared: **Content-based Filtering**, **Model-based CF (Truncated SVD)**, **Memory-based CF (item/user kNN)** and **Hybrid Filtering**.
 
-## PPT 계획에 따른 전처리
+## Final Test results
 
-1. 전체 데이터에서 평점이 많은 **상위 게임 1,000개** 선정
-2. 이 게임들에 대해 **평점 20개 이상** 기록한 사용자만 남김
-3. 너무 크면 사용자 무작위 표본 추출 (seed=42)
-4. 중복 사용자-게임 평점 정리 후 **사용자별 Train 80% / Validation 10% / Test 10%** 분할
+All five configurations used the same processed data, evaluation rules and candidate catalog. Models and hyperparameters were chosen using Validation RMSE, not Test Recall.
 
+| Model | RMSE ↓ | MAE ↓ | Hit Rate@10 ↑ | **Macro Recall@10 ↑** | Coverage@10 ↑ |
+|---|---:|---:|---:|---:|---:|
+| Content-based (mechanics + themes) | 1.2457 | 0.9399 | 3.2% | 0.97% | **31.5%** |
+| Truncated SVD (10 factors) | 1.1157 | 0.8447 | **10.8%** | **4.13%** | 4.2% |
+| Memory CF (item, Pearson, k=40) | **1.0989** | **0.8296** | 6.8% | 3.14% | 8.1% |
+| Hybrid (0.1 Content + 0.9 SVD) | 1.1161 | 0.8449 | **10.8%** | 4.11% | 4.6% |
+| Hybrid (0.1 Content + 0.9 Memory) | 1.1019 | 0.8317 | 6.8% | 3.09% | 8.7% |
 
-## 설치 및 실행
+**Interpretation:** Memory-based CF achieved the lowest prediction error; SVD had the highest Macro Recall@10 and tied for the highest Hit Rate@10; Content-based recommended the broadest set of games. The hybrids slightly increased coverage without improving prediction RMSE.
 
-Python 3.10 이상.
+- **Rating evaluation:** all 36,003 observed Test ratings for RMSE/MAE.
+- **Ranking evaluation:** the same 250 eligible users sampled with seed 42 from 4,460 Test users with at least one held-out rating ≥ 8.
+- **Recall@10:** compute the fraction of each user's observed Test-relevant games retrieved among their Top 10, then average over 250 users (**macro**, not pooled/micro).
+- **Hit Rate@10:** fraction of those 250 users for whom the Top 10 contains ≥1 observed Test-relevant game.
+- **Catalog Coverage@10:** distinct recommended games across those users divided by the shared 1,000-game catalog.
+
+[Final Test CSV](examples/real_bgg_memory_cf_hybrid/final_test_metrics.csv) · [Final Test JSON](examples/real_bgg_memory_cf_hybrid/final_test_results.json) · [Validation model/alpha comparisons](examples/real_bgg_memory_cf_hybrid/) · [SVD Validation comparisons](examples/real_bgg_svd_5000/)
+
+## Dataset and experiment design
+
+- Source: [Board Games Database from BoardGameGeek (Kaggle)](https://www.kaggle.com/datasets/threnjen/board-games-database-from-boardgamegeek).
+- Valid original observations: 18,942,144 (from 18,942,215 rows). From the 1,000 most frequently rated games, select users with ≥20 ratings, sample up to 5,000 (seed=42), then deduplicate and recheck eligibility.
+- Final sample: **4,997 users, 1,000 games, 362,787 ratings**. Per-user Train/Validation/Test: **290,572 / 36,212 / 36,003**.
+- Only Training data inform user profiles, similarity, item biases and latent factors. Missing interactions are **unlabeled**, not observed 0-star ratings. Popularity is used for catalog selection only, **not** as a score component.
+- SVD uses SciPy sparse `svds` (not Surprise SGD); Memory CF uses co-rated Pearson similarity with minimum support 3, shrinkage 10 and k=40; both Hybrid variants use content weight α=0.1.
+
+## Software layout
+
+| Location | Purpose |
+|---|---|
+| `boardrec/preprocessing.py`, `boardrec/bgg_fast.py`, `boardrec/bgg_io.py` | Authorized BGG input, cleaning, sampling and data splits |
+| `boardrec/content.py`, `boardrec/svd.py`, `boardrec/memory_cf.py`, `boardrec/hybrid.py` | Four recommender families |
+| `boardrec/evaluation.py` | RMSE, MAE, Hit Rate@10, **Macro Recall@10**, Catalog Coverage@10 |
+| `boardrec/*_experiments.py`, `boardrec/final_test.py` | Validation experiments and final Test comparison |
+| `scripts/` | Runnable entrypoints |
+| `tests/` | Synthetic-data and metric correctness tests |
+| `examples/` | Aggregate-only saved evaluation results/plots |
+
+See [Evaluation protocol](docs/EVALUATION_POLICY.md) and [External functions / model parameters](docs/EXTERNAL_APIS.md) for precise definitions, nontrivial APIs and experiment details.
+
+## Install, test and run
+
+Requires **Python 3.10+**. From the repository root:
 
 ```bash
 pip install -e ".[dev]"
 python -m pytest -q
+# Synthetic-data smoke test; does not need BGG input:
 python -m boardrec.cli demo --top-games 35 --min-user-ratings 8 --max-users 25
 ```
 
-실제 BGG 데이터 사용권한을 확인하고, ZIP을 `data/raw/`에 준비한 경우:
+To reproduce the real-data experiments, obtain any necessary dataset permissions and download the BGG archive **yourself**; no original ratings or usernames are provided in this repository. Place the archive at `data/raw/archive (1).zip` and run:
 
 ```bash
 python scripts/run_bgg.py --archive "data/raw/archive (1).zip" --rights-confirmed --top-games 1000 --min-user-ratings 20 --max-users 5000 --seed 42
+python scripts/run_svd.py --data-dir data/processed --out outputs/bgg_svd --max-hit-users 250
+python scripts/run_memory_cf.py --data-dir data/processed --out outputs/bgg_memory_cf --max-hit-users 250
+python scripts/run_hybrid.py --data-dir data/processed --out outputs/bgg_hybrid --svd-factors 10 --svd-scale 1.0 --memory-cf-results outputs/bgg_memory_cf/results.json --max-hit-users 250
+python scripts/run_final_test.py --data-dir data/processed --out outputs/final_test --max-hit-users 250
 ```
 
-사용권한 확인 없이 `--rights-confirmed`를 사용하면 안 됩니다. Kaggle에서 내려받을 수 있다는 사실 자체가 머신러닝 학습 허가를 의미하지는 않습니다. RAM이 부족하면 `--low-memory`를 추가합니다.
+The final script writes `outputs/final_test/test_metrics.csv` and `results.json`, both including `recall@10`. The raw and processed data directories, along with local outputs, are excluded from version control. If RAM is limited, see `python scripts/run_bgg.py --help` for `--low-memory`.
 
-입력/출력 형식: `train.csv`, `val.csv`, `test.csv`는 공통으로 `user_id, game_id, rating` (IDs are strings, ratings 1–10)을 사용합니다. `data/raw`, `data/processed`, `outputs`는 Git에서 제외합니다.
+## Scope and limitations
 
-## 최종 평가 지표 — 5개
+This is an **offline coursework study**, not an online user trial. Sparse observed positives underestimate unknown preferences; 250-user ranking metrics are sample-sensitive. Selecting the most-rated 1,000 games introduces popularity-related catalog bias. Earlier exploratory analyses had viewed Test information; the reported Test results are therefore **not a pristine untouched independent holdout**. Recall was added later to the *same* fixed Test predictions without retraining or reselecting models.
 
-| Metric | 목적 |
-|---|---|
-| **RMSE** ↓ | 평점 예측 오차 (큰 오차에 민감) |
-| **MAE** ↓ | 평점 예측 평균 절대 오차 |
-| **Hit Rate@10** ↑ | Validation/Test에서 실제 8점 이상을 준 게임이 Top-10에 하나 이상 포함된 사용자 비율 |
-| **Recall@10** ↑ | 사용자별 관련 Test 게임(평점 ≥8) 중 Top-10에 포함된 비율의 평균(Macro Recall) |
-| **Catalog Coverage@10** ↑ | 평가 대상 사용자 전체의 Top-10에 등장한 서로 다른 게임 수 / 공통 후보 게임 수 |
-
-게임에 평점이 없다는 것은 **싫어한다는 뜻이 아니므로**, Hit Rate와 Recall은 관측된 선호 항목에 대한 Offline 지표입니다. 평가 대상 사용자 수와 후보 게임 수를 함께 명시합니다. 상세 원칙: [Evaluation Policy](docs/EVALUATION_POLICY.md).
-
-현재 순수 Content-based (Mechanics + Themes) **Validation** 결과: RMSE **1.2384**, MAE **0.9390**, Hit Rate@10 **6.1%**, Catalog Coverage@10 **50.4%**. 마지막 두 지표는 1,000명 표본입니다. **Test 결과와 혼동하지 마세요.**
-
-## External APIs and parameter reference
-
-See [External Python APIs, model parameters, and reproducible commands](docs/EXTERNAL_APIS.md) for the source-code explanations required by the project specification.
-
-## 최종 Test Recall@10 (2026-11-22 추가)
-
-동일한 Test 36,003개 관측 평점, 기존 Top-10 평가 대상 250명(seed 42), 관련 평점 기준 ≥8을 사용해 사용자별 Recall을 Macro-average로 계산했습니다. 선정된 사용자들에 관측된 관련 Test 게임은 모두 834개입니다. Hit Rate/Coverage 및 추천된 고유 게임 수가 기존 결과와 일치함을 검증했습니다.
-
-| Model | Hit Rate@10 | Macro Recall@10 |
-|---|---:|---:|
-| Content-based | 3.2% | 0.97% |
-| SVD | 10.8% | **4.13%** |
-| Memory CF | 6.8% | 3.14% |
-| Hybrid + SVD | 10.8% | 4.11% |
-| Hybrid + Memory CF | 6.8% | 3.09% |
-
-원본 집계: [Final Test Metrics CSV](examples/real_bgg_memory_cf_hybrid/final_test_metrics.csv). Recall@10은 **Test 결과에서 모델을 재선정하거나 튜닝하지 않고** 동일한 추천 목록에 대해 추가로 계산했습니다. Missing Rating은 부정적 피드백으로 간주하지 않습니다.
+**Data and code attribution:** Download availability is not a grant of machine-learning training or redistribution rights; check the applicable BGG/Kaggle terms. No raw BGG CSV, usernames or per-user histories are committed. The implementation relies on [SciPy `svds` documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.svds.html); adapted source code from external projects must be credited at its actual use site. Making a GitHub repository public does not grant rights to the third-party dataset.

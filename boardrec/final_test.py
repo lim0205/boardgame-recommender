@@ -4,7 +4,7 @@ Nothing here selects hyperparameters: every setting is read from the
 Validation outputs (or the documented SVD choice). Run this once, after all
 Validation experiments are finished, and do not tune again on its results.
 
-Models evaluated (all fitted on TRAIN only, same 250-user Hit Rate sample rule):
+Models evaluated (all fitted on TRAIN only, same 250-user Top-10 sample for Hit Rate, Recall and Coverage):
   content        Content-based (feature set chosen on Validation)
   svd            Truncated SVD (n_factors / residual_scale chosen on Validation)
   memory_cf      Memory-based CF (setting chosen by run_memory_cf.py)

@@ -29,4 +29,7 @@ def test_final_test_end_to_end(tmp_path):
                             svd_params={"n_factors": 3}, max_hit_users=5)
     assert set(report["results"]) == {"content", "svd", "memory_cf", "hybrid_svd", "hybrid_memory_cf"}
     assert report["results"]["hybrid_svd"]["settings"] == {"alpha": 0.5}
-    assert (tmp_path / "final" / "test_metrics.csv").stat().st_size > 0
+    result_csv = tmp_path / "final" / "test_metrics.csv"
+    assert result_csv.stat().st_size > 0
+    assert "recall@10" in pd.read_csv(result_csv).columns
+    assert all("recall@10" in metrics for metrics in report["results"].values())

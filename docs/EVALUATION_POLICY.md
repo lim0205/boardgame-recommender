@@ -1,63 +1,37 @@
-# Final evaluation policy — pure Content-based Filtering
+# Evaluation protocol and final Test results
 
-Original decision date: 2026-10-27. This file records the original four-metric evaluation policy; on 2026-11-22 the final Test comparison was extended with Macro Recall@10, without changing the selected models or their settings.
+**Fixed dataset:** 4,997 users, 1,000 games, 362,787 observed ratings; user-wise Train 290,572 / Validation 36,212 / Test 36,003. Dataset selection uses the 1,000 most-rated games before splitting; that choice may introduce selection bias.
 
-## Recommendation algorithm
+**Model selection:** all candidate feature settings, neighborhood sizes, SVD ranks and Hybrid α values were selected using Validation RMSE. No model was reselected using Test Recall.
 
-Use `ContentBasedRecommender` with binary `mechanics` / `themes` game metadata, cosine similarity and each user's Train-set ratings. **No popularity score or popularity-blend weight is applied to the Top-10 recommendations.**
+## Five metrics
 
-The earlier `ranking.py` and `ranking_experiments.py` modules are **historical exploratory comparisons only**; `boardrec.cli run` and `scripts/run_bgg.py` do not invoke them. When the teammate implements CF, the *planned* final Hybrid combines Content-based with Collaborative Filtering, not popularity.
-
-Caveat: the dataset itself is limited to the 1,000 games with most rating observations as a practical preprocessing step; this produces an already-popularity-skewed candidate catalog. That is separate from recommendation scoring and must be disclosed.
-
-## Final comparison metrics — five (originally four)
-
-| Metric | Role | Interpretation |
+| Metric | Formula / definition | Cohort |
 |---|---|---|
-| **RMSE** | Mandatory rating accuracy | Root mean squared error of held-out 1–10 star ratings; lower is better |
-| **MAE** | Mandatory rating accuracy | Mean absolute error of held-out 1–10 ratings; lower is better |
-| **Hit Rate@10** | Mandatory Top-10 relevance | Among eligible users with ≥1 held-out rating ≥8, fraction whose Top-10 contains ≥1 such game; higher is better |
-| **Recall@10 (Macro)** | Additional Top-10 relevance | Mean across the same eligible users of relevant held-out games found in Top-10 / all their observed relevant held-out games; higher is better |
-| **Catalog Coverage@10** | One supplementary Top-10 breadth metric | Distinct games in all evaluated Top-10 lists / size of the *shared* candidate catalog; higher indicates more catalog breadth, not necessarily accuracy |
+| RMSE | sqrt(mean((predicted − actual)²)) | All 36,003 observed Test ratings |
+| MAE | mean(abs(predicted − actual)) | All 36,003 observed Test ratings |
+| Hit Rate@10 | mean(1 if Top-10 intersects user Test positives else 0) | 250 eligible Test users |
+| **Macro Recall@10** | mean_user(\|Top-10 ∩ observed relevant Test games\| / \|observed relevant Test games\|) | The same 250 users |
+| Catalog Coverage@10 | distinct games across all Top-10 lists / 1,000 candidate games | The same 250 users |
 
-RMSE and MAE should be presented together because they capture different error sensitivities. Hit Rate measures a binary retrieval success. Coverage captures an orthogonal property: whether the system recommends only a narrow set of items.
+**Eligible user:** at least one observed Test rating ≥8. The 250 users are sampled without replacement from the 4,460 eligible users with `numpy.random.default_rng(42).choice(...)`; all models use the identical set. Candidate games exclude the user's Training-rated games. No unobserved item is treated as a known negative.
 
-The initial Validation report used four metrics; the 2026-11-22 final Test comparison adds Recall@10 while preserving the original Hit Rate/Coverage cohort. NDCG@10, Personalization, and Tail Hit Rate remain optional future evaluations. No model settings were tuned using Test Recall.
+**Macro versus Micro Recall:** each eligible user has equal weight in Macro Recall. For the SVD model, 30 observed relevant Test games were retrieved out of 834 across the sampled users (Micro Recall = 30/834 = 3.60%), while the actual Macro Recall@10 is **4.13%**.
 
-## Actual BGG validation result (no popularity ranking)
+## Final Test (five model configurations)
 
-The pure `mechanics + themes` Content-based model was evaluated on the real user-provided 4,997-user processed BGG dataset. **RMSE and MAE use all 36,212 Validation ratings; Hit Rate and Coverage use the same 1,000 seeded, eligible Validation users**.
+| Model | RMSE ↓ | MAE ↓ | Hit Rate@10 ↑ | Macro Recall@10 ↑ | Coverage@10 ↑ |
+|---|---:|---:|---:|---:|---:|
+| Content | 1.2457 | 0.9399 | 3.2% | 0.97% | 31.5% |
+| SVD | 1.1157 | 0.8447 | 10.8% | 4.13% | 4.2% |
+| Item Memory CF | 1.0989 | 0.8296 | 6.8% | 3.14% | 8.1% |
+| Hybrid + SVD | 1.1161 | 0.8449 | 10.8% | 4.11% | 4.6% |
+| Hybrid + Memory CF | 1.1019 | 0.8317 | 6.8% | 3.09% | 8.7% |
 
-| RMSE ↓ | MAE ↓ | Hit Rate@10 ↑ | Catalog Coverage@10 ↑ |
-|---:|---:|---:|---:|
-| **1.2384** | **0.9390** | **6.1% (61/1,000 users)** | **50.4% (504/1,000 games)** |
+Exact decimals, settings and aggregate counts: [final_test_metrics.csv](../examples/real_bgg_memory_cf_hybrid/final_test_metrics.csv). The same recommendations reproduced the previously recorded Hit Rate, coverage and distinct recommended-item counts after the Recall addition.
 
-This is **Validation**, not a fresh Test result. The originally reported 3.2% Test Hit Rate used a different 250-user sample; do not mix these into one comparison row. Full aggregate JSON: [validation_metrics.json](../examples/real_bgg_official_1000/validation_metrics.json).
+## Reproducibility and limitations
 
-## Protocol and cautions
+The `boardrec.evaluation.evaluate` function returns all five metrics, including `recall@10`. The final Test script writes these to CSV and JSON. Validation experiments can report Recall with the same metric implementation; historical Validation CSV files were produced before Recall was added and should not be mistaken for new five-metric runs.
 
-1. Compare `mechanics`, `themes`, `both` Content-based feature sets on **Validation** (not Test). For continuity with the original assignment, choose the feature set by minimum Validation RMSE; retain historical four-metric Validation outputs and add Recall to the final Test comparison.
-2. Keep the per-user Train/Validation/Test split (80/10/10), seed 42, candidate catalog and `Top-10` rule identical across models.
-3. Use the **same deterministic eligible-user sample** for Hit Rate, Recall and Coverage. Present the number of evaluated users and catalog size beside each result. Coverage depends on how many people were evaluated.
-4. Unknown/unrated games are **unlabeled**, not disliked. Therefore Hit Rate is an observed-positive offline proxy, not actual real-world recommendation success.
-5. Earlier exploratory work already looked at the Test split. Do **not** use it repeatedly to tune the model or describe it as a pristine untouched test; a genuinely confirmatory result requires a fresh holdout.
-6. Only aggregated metrics may be shared publicly. Original BGG ratings, usernames and histories should not be committed. Independently confirm dataset training-use rights.
-
-## Current code behavior
-
-`boardrec.evaluation.evaluate` reports `rmse`, `mae`, `hit_rate@10`, `recall@10`, `catalog_coverage@10` in newly generated outputs along with sample counts. `Catalog Coverage` is computed over the **same eligible users** and recommendations already used for Hit Rate, so this extra metric adds no second recommendation pass.
-
-Run (once authorized input data is prepared):
-
-```bash
-python -m pytest -q
-python -m boardrec.cli run --data-dir data/processed --out outputs/bgg_content --max-hit-users 500
-```
-
-**Historical results:** the 2026-10-26 test run of the pure Content model found RMSE ≈1.2457, MAE ≈0.9399 and Hit Rate@10 =3.2% for 250 eligible Test users. Coverage was not included in that original Test report, so it cannot be claimed for the same run without rerunning the evaluator. A separate Validation experiment with 1,000 eligible users reported pure Content Catalog Coverage@10 of 50.4%; these two figures are **not the same evaluation cohort or split**.
-
-## Added final Test Recall@10
-
-The final five-model Test results use the original 250 eligible users selected with seed 42. Ratings ≥8 in Test define observed relevant games. Recall@10 is the simple average of per-user recall values (Macro Recall), not the pooled ratio of recovered relevant games to all positive records. The SVD model retrieved 30 of 834 observed relevant Test games across these users: its pooled Micro Recall would be 3.60%, but its actual Macro Recall@10 was **4.13%**. All five models' original Hit Rate and Catalog Coverage values were reproduced.
-
-See [final_test_metrics.csv](../examples/real_bgg_memory_cf_hybrid/final_test_metrics.csv) for results. This is a post-hoc metric computation on the existing held-out sample; Test had already been inspected earlier, so it is not a pristine independent confirmation.
+Ratings below 8 are not counted as relevant Test positives, but unrated games are **unknown**, not disliked. Top-10 metrics on 250 users have sample variability. The original candidate catalog was selected using full-data popularity counts before splitting. Earlier exploratory work inspected some Test information, so these are not pristine confirmatory measurements; an independent holdout or temporal split would be preferable.

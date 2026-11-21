@@ -23,7 +23,7 @@ from .memory_cf import MemoryCFRecommender
 from .preprocessing import load_prepared
 from .svd import SVDRecommender
 
-METRICS = ("rmse", "mae", "hit_rate@10", "catalog_coverage@10")
+METRICS = ("rmse", "mae", "hit_rate@10", "recall@10", "catalog_coverage@10")
 DEFAULT_ALPHAS = tuple(round(a, 1) for a in np.linspace(0.0, 1.0, 11))
 
 

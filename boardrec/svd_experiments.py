@@ -54,7 +54,7 @@ def run_svd_experiments(data_dir: str | Path, output_dir: str | Path, *,
                 "residual_scale": float(best.residual_scale),
                 "item_reg": float(best.item_reg)}
     metrics = {key: (None if pd.isna(best[key]) else float(best[key]))
-               for key in ('rmse','mae','hit_rate@10','catalog_coverage@10')}
+               for key in ('rmse','mae','hit_rate@10','recall@10','catalog_coverage@10')}
     report = {"model": "Sparse truncated SVD with user mean + item bias",
               "selected_by": "Lowest Validation RMSE; no Test used",
               "best_hyperparameters": best_run,

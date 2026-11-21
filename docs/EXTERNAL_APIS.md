@@ -27,7 +27,7 @@ This document accompanies the commented Python source. It explains nontrivial li
 | `predict(user_id, game_id)` / `predict_many(user_id, game_ids)` | Predict one or multiple 1–10 ratings. |
 | `recommend(user_id, n=10)` | Sort candidate items by predicted score and return Top-`n` without Training-rated games. |
 | `rating_metrics(model, holdout)` | Returns RMSE and MAE for **all observed** holdout rating rows. |
-| `hit_rate_at_k(model, holdout, k=10, relevant_threshold=8, max_users=250)` | Computes Hit Rate@k and catalog coverage over a deterministic sample of users with at least one held-out relevant game. |
+| `hit_rate_at_k(model, holdout, k=10, relevant_threshold=8, max_users=250)` | Computes Hit Rate@k, **Macro Recall@k**, and catalog coverage over a deterministic sample of users with at least one held-out relevant game. Macro Recall is the average fraction of each user's observed relevant items appearing in Top-k. |
 
 ## External libraries and nontrivial API calls
 
@@ -60,8 +60,8 @@ python scripts/run_svd.py --data-dir data/processed --out outputs/bgg_svd --max-
 python scripts/run_memory_cf.py --data-dir data/processed --out outputs/bgg_memory_cf --max-hit-users 250
 ```
 
-For the Hybrid and final Test sequence, see `docs/MEMORY_CF_HYBRID.md`. The final aggregate Test output is included in `examples/real_bgg_memory_cf_hybrid/final_test_metrics.csv`. It records five configurations with Test RMSE, MAE, Hit Rate@10 and Coverage@10. Validation figures and per-model comparison CSVs are also retained in `examples/`.
+For the complete Hybrid and final Test command sequence, see the repository [README](../README.md). The final aggregate Test output is included in `examples/real_bgg_memory_cf_hybrid/final_test_metrics.csv`. It records five configurations with Test RMSE, MAE, Hit Rate@10, **Recall@10**, and Coverage@10. Validation figures and per-model comparison CSVs are also retained in `examples/`.
 
 **Citations / provenance:** The dataset source is Kaggle's Board Games Database from BoardGameGeek. The core sparse-SVD method uses SciPy `svds` ([official documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.svds.html)). If any code was copied or adapted from a blog, a repository, or Kaggle, cite the exact source in the relevant source file. The presence or absence of copying cannot be established from a code review alone.
 
-**Data restrictions:** Do not commit user histories, usernames or original BGG files to GitHub. Download availability does not grant ML-training or redistribution rights; confirm permitted use. The repository is private, so provide the grader explicit access or a separate code archive.
+**Data restrictions:** Do not commit user histories, usernames or original BGG files to GitHub. Download availability does not grant ML-training or redistribution rights; confirm permitted use. Before submitting, verify that the grader can open the repository URL. Public visibility does not remove previous commit history or confer rights to the BGG dataset.
